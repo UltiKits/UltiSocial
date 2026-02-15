@@ -100,7 +100,8 @@ public class FriendService {
         List<FriendRequest> requests = pendingRequests.computeIfAbsent(receiverUuid, k -> new ArrayList<>());
         for (FriendRequest req : requests) {
             if (req.getSender().equals(senderUuid)) {
-                sender.sendMessage("§c你已经向 " + receiver.getName() + " 发送过好友请求了！");
+                sender.sendMessage(plugin.i18n("already_sent_request")
+                    .replace("{PLAYER}", receiver.getName()).replace("&", "§"));
                 return false;
             }
         }
@@ -139,7 +140,8 @@ public class FriendService {
         List<FriendRequest> requests = pendingRequests.get(receiverUuid);
         
         if (requests == null || requests.isEmpty()) {
-            receiver.sendMessage("§c没有来自 " + senderName + " 的好友请求！");
+            receiver.sendMessage(plugin.i18n("no_pending_request")
+                .replace("{PLAYER}", senderName).replace("&", "§"));
             return false;
         }
         
@@ -152,7 +154,7 @@ public class FriendService {
         }
         
         if (request == null || request.isExpired(config.getRequestTimeout())) {
-            receiver.sendMessage("§c好友请求已过期或不存在！");
+            receiver.sendMessage(plugin.i18n("request_expired").replace("&", "§"));
             return false;
         }
         
@@ -196,7 +198,8 @@ public class FriendService {
         List<FriendRequest> requests = pendingRequests.get(receiverUuid);
         
         if (requests == null || requests.isEmpty()) {
-            receiver.sendMessage("§c没有来自 " + senderName + " 的好友请求！");
+            receiver.sendMessage(plugin.i18n("no_pending_request")
+                .replace("{PLAYER}", senderName).replace("&", "§"));
             return false;
         }
         
@@ -209,7 +212,7 @@ public class FriendService {
         }
         
         if (request == null) {
-            receiver.sendMessage("§c好友请求不存在！");
+            receiver.sendMessage(plugin.i18n("request_not_exist").replace("&", "§"));
             return false;
         }
         
@@ -246,7 +249,8 @@ public class FriendService {
         }
         
         if (toRemove == null) {
-            player.sendMessage("§c" + friendName + " 不是你的好友！");
+            player.sendMessage(plugin.i18n("not_friend")
+                .replace("{PLAYER}", friendName).replace("&", "§"));
             return false;
         }
         

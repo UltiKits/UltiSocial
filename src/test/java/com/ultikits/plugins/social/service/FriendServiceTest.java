@@ -78,6 +78,7 @@ class FriendServiceTest {
         service = new FriendService();
 
         // Inject dependencies via reflection
+        UltiSocialTestHelper.setField(service, "plugin", UltiSocialTestHelper.getMockPlugin());
         UltiSocialTestHelper.setField(service, "config", config);
         UltiSocialTestHelper.setField(service, "dataOperator", friendDataOperator);
         UltiSocialTestHelper.setField(service, "blacklistDataOperator", blacklistDataOperator);
@@ -261,7 +262,7 @@ class FriendServiceTest {
             boolean result = service.acceptRequest(friend, "NonExistent");
 
             assertThat(result).isFalse();
-            verify(friend).sendMessage(contains("没有来自"));
+            verify(friend).sendMessage(contains("no_pending_request"));
         }
 
         @Test
@@ -284,7 +285,7 @@ class FriendServiceTest {
             boolean result = service.acceptRequest(friend, "TestPlayer");
 
             assertThat(result).isFalse();
-            verify(friend).sendMessage(contains("过期"));
+            verify(friend).sendMessage(contains("request_expired"));
         }
 
         @Test
@@ -381,7 +382,7 @@ class FriendServiceTest {
             boolean result = service.denyRequest(friend, "NonExistent");
 
             assertThat(result).isFalse();
-            verify(friend).sendMessage(contains("没有来自"));
+            verify(friend).sendMessage(contains("no_pending_request"));
         }
 
         @Test
@@ -448,7 +449,7 @@ class FriendServiceTest {
             boolean result = service.removeFriend(player, "NonExistent");
 
             assertThat(result).isFalse();
-            verify(player).sendMessage(contains("不是你的好友"));
+            verify(player).sendMessage(contains("not_friend"));
         }
 
         @Test
