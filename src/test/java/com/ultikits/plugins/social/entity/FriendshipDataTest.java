@@ -334,12 +334,12 @@ class FriendshipDataTest {
         }
 
         @Test
-        @DisplayName("Should update ID to different types")
+        @DisplayName("Should update ID to different string values")
         void updateIdToObjectType() {
             FriendshipData data = new FriendshipData();
 
-            data.setId(42);
-            assertThat(data.getId()).isEqualTo(42);
+            data.setId("42");
+            assertThat(data.getId()).isEqualTo("42");
 
             data.setId("string-id");
             assertThat(data.getId()).isEqualTo("string-id");

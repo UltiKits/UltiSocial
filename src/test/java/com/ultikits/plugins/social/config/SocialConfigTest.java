@@ -102,6 +102,55 @@ class SocialConfigTest {
             SocialConfig config = createRealConfig();
             assertThat(config.getBlockedMessage()).isEqualTo("&c无法与 {PLAYER} 进行好友操作，因为存在黑名单关系");
         }
+
+        @Test
+        @DisplayName("Should have default request sent message")
+        void requestSentMessage() {
+            SocialConfig config = createRealConfig();
+            assertThat(config.getRequestSentMessage()).isEqualTo("&a已向 {PLAYER} 发送好友请求！");
+        }
+
+        @Test
+        @DisplayName("Should have default request received message")
+        void requestReceivedMessage() {
+            SocialConfig config = createRealConfig();
+            assertThat(config.getRequestReceivedMessage()).contains("{PLAYER}");
+        }
+
+        @Test
+        @DisplayName("Should have default request denied message")
+        void requestDeniedMessage() {
+            SocialConfig config = createRealConfig();
+            assertThat(config.getRequestDeniedMessage()).isEqualTo("&c已拒绝 {PLAYER} 的好友请求");
+        }
+
+        @Test
+        @DisplayName("Should have default max friends message")
+        void maxFriendsMessage() {
+            SocialConfig config = createRealConfig();
+            assertThat(config.getMaxFriendsMessage()).isEqualTo("&c你的好友数量已达上限！");
+        }
+
+        @Test
+        @DisplayName("Should have default already friends message")
+        void alreadyFriendsMessage() {
+            SocialConfig config = createRealConfig();
+            assertThat(config.getAlreadyFriendsMessage()).contains("{PLAYER}");
+        }
+
+        @Test
+        @DisplayName("Should have default player blocked message")
+        void playerBlockedMessage() {
+            SocialConfig config = createRealConfig();
+            assertThat(config.getPlayerBlockedMessage()).contains("{PLAYER}");
+        }
+
+        @Test
+        @DisplayName("Should have default player unblocked message")
+        void playerUnblockedMessage() {
+            SocialConfig config = createRealConfig();
+            assertThat(config.getPlayerUnblockedMessage()).contains("{PLAYER}");
+        }
     }
 
     @Nested
@@ -178,6 +227,94 @@ class SocialConfigTest {
             SocialConfig config = createRealConfig();
             config.setFriendAddedMessage("&aNew friend!");
             assertThat(config.getFriendAddedMessage()).isEqualTo("&aNew friend!");
+        }
+
+        @Test
+        @DisplayName("Should update friend removed message")
+        void setFriendRemovedMessage() {
+            SocialConfig config = createRealConfig();
+            config.setFriendRemovedMessage("&cRemoved!");
+            assertThat(config.getFriendRemovedMessage()).isEqualTo("&cRemoved!");
+        }
+
+        @Test
+        @DisplayName("Should update friend online message")
+        void setFriendOnlineMessage() {
+            SocialConfig config = createRealConfig();
+            config.setFriendOnlineMessage("&aOnline!");
+            assertThat(config.getFriendOnlineMessage()).isEqualTo("&aOnline!");
+        }
+
+        @Test
+        @DisplayName("Should update friend offline message")
+        void setFriendOfflineMessage() {
+            SocialConfig config = createRealConfig();
+            config.setFriendOfflineMessage("&7Offline!");
+            assertThat(config.getFriendOfflineMessage()).isEqualTo("&7Offline!");
+        }
+
+        @Test
+        @DisplayName("Should update request sent message")
+        void setRequestSentMessage() {
+            SocialConfig config = createRealConfig();
+            config.setRequestSentMessage("&aSent!");
+            assertThat(config.getRequestSentMessage()).isEqualTo("&aSent!");
+        }
+
+        @Test
+        @DisplayName("Should update request received message")
+        void setRequestReceivedMessage() {
+            SocialConfig config = createRealConfig();
+            config.setRequestReceivedMessage("&eReceived!");
+            assertThat(config.getRequestReceivedMessage()).isEqualTo("&eReceived!");
+        }
+
+        @Test
+        @DisplayName("Should update request denied message")
+        void setRequestDeniedMessage() {
+            SocialConfig config = createRealConfig();
+            config.setRequestDeniedMessage("&cDenied!");
+            assertThat(config.getRequestDeniedMessage()).isEqualTo("&cDenied!");
+        }
+
+        @Test
+        @DisplayName("Should update max friends message")
+        void setMaxFriendsMessage() {
+            SocialConfig config = createRealConfig();
+            config.setMaxFriendsMessage("&cToo many!");
+            assertThat(config.getMaxFriendsMessage()).isEqualTo("&cToo many!");
+        }
+
+        @Test
+        @DisplayName("Should update already friends message")
+        void setAlreadyFriendsMessage() {
+            SocialConfig config = createRealConfig();
+            config.setAlreadyFriendsMessage("&cAlready!");
+            assertThat(config.getAlreadyFriendsMessage()).isEqualTo("&cAlready!");
+        }
+
+        @Test
+        @DisplayName("Should update blocked message")
+        void setBlockedMessage() {
+            SocialConfig config = createRealConfig();
+            config.setBlockedMessage("&cBlocked!");
+            assertThat(config.getBlockedMessage()).isEqualTo("&cBlocked!");
+        }
+
+        @Test
+        @DisplayName("Should update player blocked message")
+        void setPlayerBlockedMessage() {
+            SocialConfig config = createRealConfig();
+            config.setPlayerBlockedMessage("&cYou blocked them!");
+            assertThat(config.getPlayerBlockedMessage()).isEqualTo("&cYou blocked them!");
+        }
+
+        @Test
+        @DisplayName("Should update player unblocked message")
+        void setPlayerUnblockedMessage() {
+            SocialConfig config = createRealConfig();
+            config.setPlayerUnblockedMessage("&aUnblocked!");
+            assertThat(config.getPlayerUnblockedMessage()).isEqualTo("&aUnblocked!");
         }
     }
 
