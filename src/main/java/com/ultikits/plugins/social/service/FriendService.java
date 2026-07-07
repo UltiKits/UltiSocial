@@ -286,6 +286,8 @@ public class FriendService {
             .where("player_uuid").eq(playerUuid.toString())
             .list();
 
+        friends = deduplicateFriendPairs(friends);
+
         // Sort by favorite, then by name
         friends.sort((a, b) -> {
             if (a.isFavorite() != b.isFavorite()) {
@@ -550,11 +552,71 @@ public class FriendService {
             .where("player_uuid").eq(playerUuid.toString())
             .list();
 
+        blacklist = deduplicateBlacklistPairs(blacklist);
+
         // Sort by time descending
         blacklist.sort((a, b) -> Long.compare(b.getCreatedTime(), a.getCreatedTime()));
 
         blacklistCache.put(playerUuid, blacklist);
         return blacklist;
+    }
+
+    private List<FriendshipData> deduplicateFriendPairs(List<FriendshipData> friends) {
+        Map<String, FriendshipData> canonicalByPair = new LinkedHashMap<>();
+        List<FriendshipData> withoutPairIdentity = new ArrayList<>();
+        for (FriendshipData friend : friends) {
+            String key = pairKey(friend.getPlayerUuid(), friend.getFriendUuid());
+            if (key == null) {
+                withoutPairIdentity.add(friend);
+                continue;
+            }
+            FriendshipData existing = canonicalByPair.get(key);
+            if (existing == null || compareIds(friend.getId(), existing.getId()) < 0) {
+                canonicalByPair.put(key, friend);
+            }
+        }
+        List<FriendshipData> deduplicated = new ArrayList<>(withoutPairIdentity);
+        deduplicated.addAll(canonicalByPair.values());
+        return deduplicated;
+    }
+
+    private List<BlacklistData> deduplicateBlacklistPairs(List<BlacklistData> blacklist) {
+        Map<String, BlacklistData> canonicalByPair = new LinkedHashMap<>();
+        List<BlacklistData> withoutPairIdentity = new ArrayList<>();
+        for (BlacklistData entry : blacklist) {
+            String key = pairKey(entry.getPlayerUuid(), entry.getBlockedUuid());
+            if (key == null) {
+                withoutPairIdentity.add(entry);
+                continue;
+            }
+            BlacklistData existing = canonicalByPair.get(key);
+            if (existing == null || compareIds(entry.getId(), existing.getId()) < 0) {
+                canonicalByPair.put(key, entry);
+            }
+        }
+        List<BlacklistData> deduplicated = new ArrayList<>(withoutPairIdentity);
+        deduplicated.addAll(canonicalByPair.values());
+        return deduplicated;
+    }
+
+    private String pairKey(String left, String right) {
+        if (left == null || right == null) {
+            return null;
+        }
+        return left + "\u0000" + right;
+    }
+
+    private int compareIds(String left, String right) {
+        if (left == null && right == null) {
+            return 0;
+        }
+        if (left == null) {
+            return 1;
+        }
+        if (right == null) {
+            return -1;
+        }
+        return left.compareTo(right);
     }
     
     /**

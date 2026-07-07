@@ -608,6 +608,31 @@ class FriendServiceTest {
             assertThat(friends.get(1).getFriendName()).isEqualTo("Bravo");
             assertThat(friends.get(2).getFriendName()).isEqualTo("Charlie");
         }
+        @Test
+        @DisplayName("Should deduplicate duplicate friendship pair rows by canonical lowest id")
+        void deduplicateDuplicateFriendshipPairRows() {
+            FriendshipData duplicate = FriendshipData.builder()
+                    .playerUuid(playerUuid.toString())
+                    .friendUuid(friendUuid.toString())
+                    .friendName("Duplicate")
+                    .createdTime(2000L)
+                    .favorite(false)
+                    .build();
+            duplicate.setId("friendship-200");
+            FriendshipData canonical = FriendshipData.builder()
+                    .playerUuid(playerUuid.toString())
+                    .friendUuid(friendUuid.toString())
+                    .friendName("Canonical")
+                    .createdTime(1000L)
+                    .favorite(false)
+                    .build();
+            canonical.setId("friendship-100");
+            when(friendQuery.list()).thenReturn(new ArrayList<>(Arrays.asList(duplicate, canonical)));
+
+            List<FriendshipData> friends = service.getFriends(playerUuid);
+
+            assertThat(friends).containsExactly(canonical);
+        }
     }
 
     // ==================== areFriends ====================
@@ -871,6 +896,30 @@ class FriendServiceTest {
             assertThat(blacklist).hasSize(2);
             assertThat(blacklist.get(0).getBlockedName()).isEqualTo("Newer");
             assertThat(blacklist.get(1).getBlockedName()).isEqualTo("Older");
+        }
+
+        @Test
+        @DisplayName("Should deduplicate duplicate blacklist pair rows by canonical lowest id")
+        void deduplicateDuplicateBlacklistPairRows() {
+            BlacklistData duplicate = BlacklistData.builder()
+                    .playerUuid(playerUuid.toString())
+                    .blockedUuid(friendUuid.toString())
+                    .blockedName("Duplicate")
+                    .createdTime(2000L)
+                    .build();
+            duplicate.setId("blacklist-200");
+            BlacklistData canonical = BlacklistData.builder()
+                    .playerUuid(playerUuid.toString())
+                    .blockedUuid(friendUuid.toString())
+                    .blockedName("Canonical")
+                    .createdTime(1000L)
+                    .build();
+            canonical.setId("blacklist-100");
+            when(blacklistQuery.list()).thenReturn(new ArrayList<>(Arrays.asList(duplicate, canonical)));
+
+            List<BlacklistData> blacklist = service.getBlacklist(playerUuid);
+
+            assertThat(blacklist).containsExactly(canonical);
         }
 
         @Test
