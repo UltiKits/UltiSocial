@@ -1,6 +1,6 @@
 # UltiSocial - Minecraft 好友系统插件
 
-[![UltiTools-API](https://img.shields.io/badge/UltiTools--API-6.2.0-blue)](https://github.com/UltiKits/UltiTools-Reborn)
+[![UltiTools-API](https://img.shields.io/badge/UltiTools--API-6.2.1-blue)](https://github.com/UltiKits/UltiTools-Reborn)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.13--1.21-green)](https://www.spigotmc.org/)
 [![Java](https://img.shields.io/badge/Java-8+-orange)](https://www.oracle.com/java/)
 
