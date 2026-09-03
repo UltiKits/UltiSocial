@@ -178,7 +178,7 @@ class FriendshipDataTest {
         }
 
         @Test
-        @DisplayName("Should have null id from AbstractDataEntity")
+        @DisplayName("Should have null id from BaseDataEntity")
         void nullId() {
             FriendshipData data = new FriendshipData();
             assertThat(data.getId()).isNull();
@@ -324,7 +324,7 @@ class FriendshipDataTest {
         }
 
         @Test
-        @DisplayName("Should update ID from AbstractDataEntity")
+        @DisplayName("Should update ID from BaseDataEntity")
         void updateId() {
             FriendshipData data = new FriendshipData();
 
@@ -600,15 +600,15 @@ class FriendshipDataTest {
     }
 
     @Nested
-    @DisplayName("Inheritance from AbstractDataEntity")
+    @DisplayName("Inheritance from BaseDataEntity")
     class InheritanceTests {
 
         @Test
-        @DisplayName("Should be instance of AbstractDataEntity")
-        void isInstanceOfAbstractDataEntity() {
+        @DisplayName("Should be instance of BaseDataEntity")
+        void isInstanceOfBaseDataEntity() {
             FriendshipData data = new FriendshipData();
 
-            assertThat(data).isInstanceOf(com.ultikits.ultitools.abstracts.AbstractDataEntity.class);
+            assertThat(data).isInstanceOf(com.ultikits.ultitools.abstracts.data.BaseDataEntity.class);
         }
 
         @Test
