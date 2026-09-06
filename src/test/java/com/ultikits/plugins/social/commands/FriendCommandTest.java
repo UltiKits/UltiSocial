@@ -686,6 +686,32 @@ class FriendCommandTest {
         }
 
         @Test
+        @DisplayName("Should refuse a message made only of Unicode non-breaking space separators")
+        void aNonBreakingSpaceOnlyMessageIsRefused() {
+            FriendshipData friendship = FriendshipData.builder()
+                    .friendUuid(targetUuid.toString())
+                    .friendName("TargetPlayer")
+                    .build();
+            when(friendService.getFriends(playerUuid))
+                    .thenReturn(Collections.singletonList(friendship));
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayer(targetUuid))
+                        .thenReturn(target);
+
+                // U+00A0 NO-BREAK SPACE, U+2007 FIGURE SPACE, and U+202F NARROW
+                // NO-BREAK SPACE all survive String#trim() (like U+3000) *and*
+                // Character.isWhitespace() returns false for all three by
+                // definition -- Character.isSpaceChar() is required to catch them.
+                command.sendMessage(player, "TargetPlayer",
+                        new String[]{" ", "  "});
+
+                verify(player).sendMessage(contains("消息"));
+                verify(target, never()).sendMessage(anyString());
+            }
+        }
+
+        @Test
         @DisplayName("Should still deliver a message that is only a formatting code or a single character")
         void aFormattingCodeOnlyOrSingleCharacterMessageIsStillDelivered() {
             FriendshipData friendship = FriendshipData.builder()
