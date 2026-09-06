@@ -189,7 +189,12 @@ public class FriendCommand extends BaseCommandExecutor {
             return;
         }
         
-        String message = String.join(" ", messageParts);
+        String message = String.join(" ", messageParts).trim();
+        
+        if (message.isEmpty()) {
+            sender.sendMessage(ChatColor.RED + "请输入要发送的消息！用法: /friend msg <好友> <消息>");
+            return;
+        }
         
         // Send to target
         target.sendMessage(ChatColor.LIGHT_PURPLE + "[私聊] " + ChatColor.WHITE + sender.getName() + 
