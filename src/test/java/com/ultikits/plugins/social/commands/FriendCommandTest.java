@@ -661,6 +661,49 @@ class FriendCommandTest {
                 verify(target, never()).sendMessage(anyString());
             }
         }
+
+        @Test
+        @DisplayName("Should refuse a message made only of the CJK full-width space")
+        void aFullWidthSpaceOnlyMessageIsRefused() {
+            FriendshipData friendship = FriendshipData.builder()
+                    .friendUuid(targetUuid.toString())
+                    .friendName("TargetPlayer")
+                    .build();
+            when(friendService.getFriends(playerUuid))
+                    .thenReturn(Collections.singletonList(friendship));
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayer(targetUuid))
+                        .thenReturn(target);
+
+                // U+3000 IDEOGRAPHIC SPACE survives String#trim(), which only strips
+                // code points <= U+0020 -- this pins the Unicode-whitespace guard.
+                command.sendMessage(player, "TargetPlayer", new String[]{"　　"});
+
+                verify(player).sendMessage(contains("消息"));
+                verify(target, never()).sendMessage(anyString());
+            }
+        }
+
+        @Test
+        @DisplayName("Should still deliver a message that is only a formatting code or a single character")
+        void aFormattingCodeOnlyOrSingleCharacterMessageIsStillDelivered() {
+            FriendshipData friendship = FriendshipData.builder()
+                    .friendUuid(targetUuid.toString())
+                    .friendName("TargetPlayer")
+                    .build();
+            when(friendService.getFriends(playerUuid))
+                    .thenReturn(Collections.singletonList(friendship));
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayer(targetUuid))
+                        .thenReturn(target);
+
+                command.sendMessage(player, "TargetPlayer", new String[]{"§c", "a"});
+
+                verify(target).sendMessage(anyString());
+            }
+        }
     }
 
     // ==================== blockPlayer ====================
