@@ -574,6 +574,162 @@ class FriendCommandTest {
                 assertThat(captor.getValue()).contains("[私聊]");
             }
         }
+
+        @Test
+        @DisplayName("Should refuse a message with no words instead of sending an empty one")
+        void aMessageWithNoWordsIsRefused() {
+            FriendshipData friendship = FriendshipData.builder()
+                    .friendUuid(targetUuid.toString())
+                    .friendName("TargetPlayer")
+                    .build();
+            when(friendService.getFriends(playerUuid))
+                    .thenReturn(Collections.singletonList(friendship));
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayer(targetUuid))
+                        .thenReturn(target);
+
+                // A zero-trailing-argument invocation now binds an empty array (framework #396),
+                // never null -- this must be driven against that binding, not a stub of the old one.
+                command.sendMessage(player, "TargetPlayer", new String[0]);
+
+                verify(player).sendMessage(contains("消息"));
+                verify(target, never()).sendMessage(anyString());
+            }
+        }
+
+        @Test
+        @DisplayName("Should refuse a whitespace-only message the same way")
+        void aWhitespaceOnlyMessageIsRefusedTheSameWay() {
+            FriendshipData friendship = FriendshipData.builder()
+                    .friendUuid(targetUuid.toString())
+                    .friendName("TargetPlayer")
+                    .build();
+            when(friendService.getFriends(playerUuid))
+                    .thenReturn(Collections.singletonList(friendship));
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayer(targetUuid))
+                        .thenReturn(target);
+
+                command.sendMessage(player, "TargetPlayer", new String[]{" ", "   "});
+
+                verify(player).sendMessage(contains("消息"));
+                verify(target, never()).sendMessage(anyString());
+            }
+        }
+
+        @Test
+        @DisplayName("Should still deliver a message with surrounding spaces")
+        void aMessageWithSurroundingSpacesIsStillDelivered() {
+            FriendshipData friendship = FriendshipData.builder()
+                    .friendUuid(targetUuid.toString())
+                    .friendName("TargetPlayer")
+                    .build();
+            when(friendService.getFriends(playerUuid))
+                    .thenReturn(Collections.singletonList(friendship));
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayer(targetUuid))
+                        .thenReturn(target);
+
+                command.sendMessage(player, "TargetPlayer", new String[]{"  Hello  ", "World  "});
+
+                ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+                verify(target).sendMessage(captor.capture());
+                assertThat(captor.getValue()).contains("Hello");
+                assertThat(captor.getValue()).contains("World");
+            }
+        }
+
+        @Test
+        @DisplayName("Should send nothing to the target on a refusal")
+        void theTargetReceivesNothingOnARefusal() {
+            FriendshipData friendship = FriendshipData.builder()
+                    .friendUuid(targetUuid.toString())
+                    .friendName("TargetPlayer")
+                    .build();
+            when(friendService.getFriends(playerUuid))
+                    .thenReturn(Collections.singletonList(friendship));
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayer(targetUuid))
+                        .thenReturn(target);
+
+                command.sendMessage(player, "TargetPlayer", new String[]{"   "});
+
+                verify(target, never()).sendMessage(anyString());
+            }
+        }
+
+        @Test
+        @DisplayName("Should refuse a message made only of the CJK full-width space")
+        void aFullWidthSpaceOnlyMessageIsRefused() {
+            FriendshipData friendship = FriendshipData.builder()
+                    .friendUuid(targetUuid.toString())
+                    .friendName("TargetPlayer")
+                    .build();
+            when(friendService.getFriends(playerUuid))
+                    .thenReturn(Collections.singletonList(friendship));
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayer(targetUuid))
+                        .thenReturn(target);
+
+                // U+3000 IDEOGRAPHIC SPACE survives String#trim(), which only strips
+                // code points <= U+0020 -- this pins the Unicode-whitespace guard.
+                command.sendMessage(player, "TargetPlayer", new String[]{"　　"});
+
+                verify(player).sendMessage(contains("消息"));
+                verify(target, never()).sendMessage(anyString());
+            }
+        }
+
+        @Test
+        @DisplayName("Should refuse a message made only of Unicode non-breaking space separators")
+        void aNonBreakingSpaceOnlyMessageIsRefused() {
+            FriendshipData friendship = FriendshipData.builder()
+                    .friendUuid(targetUuid.toString())
+                    .friendName("TargetPlayer")
+                    .build();
+            when(friendService.getFriends(playerUuid))
+                    .thenReturn(Collections.singletonList(friendship));
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayer(targetUuid))
+                        .thenReturn(target);
+
+                // U+00A0 NO-BREAK SPACE, U+2007 FIGURE SPACE, and U+202F NARROW
+                // NO-BREAK SPACE all survive String#trim() (like U+3000) *and*
+                // Character.isWhitespace() returns false for all three by
+                // definition -- Character.isSpaceChar() is required to catch them.
+                command.sendMessage(player, "TargetPlayer",
+                        new String[]{" ", "  "});
+
+                verify(player).sendMessage(contains("消息"));
+                verify(target, never()).sendMessage(anyString());
+            }
+        }
+
+        @Test
+        @DisplayName("Should still deliver a message that is only a formatting code or a single character")
+        void aFormattingCodeOnlyOrSingleCharacterMessageIsStillDelivered() {
+            FriendshipData friendship = FriendshipData.builder()
+                    .friendUuid(targetUuid.toString())
+                    .friendName("TargetPlayer")
+                    .build();
+            when(friendService.getFriends(playerUuid))
+                    .thenReturn(Collections.singletonList(friendship));
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayer(targetUuid))
+                        .thenReturn(target);
+
+                command.sendMessage(player, "TargetPlayer", new String[]{"§c", "a"});
+
+                verify(target).sendMessage(anyString());
+            }
+        }
     }
 
     // ==================== blockPlayer ====================
