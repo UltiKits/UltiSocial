@@ -4,6 +4,8 @@ import com.ultikits.ultitools.interfaces.impl.logger.PluginLogger;
 
 import org.junit.jupiter.api.*;
 
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
@@ -26,30 +28,24 @@ class UltiSocialTest {
         verify(logger).info("UltiSocial v1.1.0 has been enabled!");
     }
 
+    /**
+     * UltiTools 6.3.0 makes {@code unregisterSelf()} and {@code reloadSelf()} final template
+     * methods that always run the framework's own steps (config reload and language refresh on
+     * reload; command and listener unregistration on unload) around the module's hooks. This
+     * module's former overrides only logged a literal line and never called {@code super}, so
+     * {@code /ul reload UltiSocial} reported success without re-reading anything
+     * (UltiKits/UltiSocial#13). They are deleted outright; this test pins that neither is
+     * declared again.
+     */
     @Test
-    @DisplayName("unregisterSelf should log message")
-    void unregisterSelf() throws Exception {
-        UltiSocial plugin = mock(UltiSocial.class);
-        PluginLogger logger = mock(PluginLogger.class);
-        when(plugin.getLogger()).thenReturn(logger);
-        doCallRealMethod().when(plugin).unregisterSelf();
+    @DisplayName("declares neither framework lifecycle template method (UltiKits/UltiSocial#13)")
+    void declaresNeitherLifecycleTemplateMethod() {
+        List<String> declared = new ArrayList<>();
+        for (Method method : UltiSocial.class.getDeclaredMethods()) {
+            declared.add(method.getName());
+        }
 
-        plugin.unregisterSelf();
-
-        verify(logger).info("UltiSocial has been disabled!");
-    }
-
-    @Test
-    @DisplayName("reloadSelf should log message")
-    void reloadSelf() throws Exception {
-        UltiSocial plugin = mock(UltiSocial.class);
-        PluginLogger logger = mock(PluginLogger.class);
-        when(plugin.getLogger()).thenReturn(logger);
-        doCallRealMethod().when(plugin).reloadSelf();
-
-        plugin.reloadSelf();
-
-        verify(logger).info("UltiSocial configuration reloaded!");
+        assertThat(declared).doesNotContain("unregisterSelf", "reloadSelf");
     }
 
     @Test
