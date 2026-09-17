@@ -101,8 +101,9 @@ GUI-exclusion register for this module (`FriendListGUI`, `BlockListGUI` — see
 This document's command-row count matches the `@CmdMapping` annotation-site count exactly (13
 against 13).
 
-**Reconciliation note — event Kind (3 handler methods against 3 `event`-Kind rows below):** a
-deliberate, explained mismatch, the same shape as UltiBackup's own reconciliation note.
+**Reconciliation note — event Kind (3 `@EventHandler` methods, 2 of them catalogued as `event`
+rows; plus 1 `event` row with no handler; 3 `event` rows in total):** the equal totals are a
+coincidence, not a 1:1 match, the same shape as UltiBackup's own reconciliation note.
 `SocialListener` carries 3 `@EventHandler` methods; only `onPlayerJoin` and `onPlayerQuit` are
 catalogued as `event`-Kind rows in `## Player Presence Notifications` below. The third
 (`onInventoryClick`, which dispatches to two private handlers for the two GUI classes) is the

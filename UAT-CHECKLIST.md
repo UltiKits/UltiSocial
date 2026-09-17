@@ -96,9 +96,9 @@ for real-machine verification, not user-facing documentation.
 
 ## Lifecycle Hooks
 
-`/ul reload <name>` calls that module's `reloadSelf()`, which as of UltiTools 6.3.0 re-reads the
-module's config files into the running beans, then logs the framework's own line
-`Module '<name>' reloaded.`; the command then replies `Module <name> has been reloaded` to its
+`/ul reload <name>` calls that module's `reloadSelf()`, which re-reads the module's config files
+into the running beans (as of UltiTools 6.3.0 a module can no longer replace this step), then logs
+the framework's own line `Module '<name>' reloaded.`; the command then replies `Module <name> has been reloaded` to its
 sender. `<name>` is the module's runtime name, the `name:` key of its own `plugin.yml` (`UltiSocial`).
 Both lines are framework strings localised by the framework's `language` setting, hence the row's
 `language: en` precondition — this module's own text in the row is hardcoded Chinese and is not
