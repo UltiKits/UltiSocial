@@ -5,9 +5,11 @@ import com.ultikits.plugins.social.UltiSocialTestHelper;
 import com.ultikits.plugins.social.config.SocialConfig;
 import com.ultikits.plugins.social.entity.FriendshipData;
 import com.ultikits.plugins.social.service.FriendService;
+import com.ultikits.ultitools.abstracts.AbstractConfigEntity;
 import com.ultikits.ultitools.abstracts.UltiToolsPlugin;
 import com.ultikits.ultitools.interfaces.DataOperator;
 import com.ultikits.ultitools.interfaces.Query;
+import com.ultikits.ultitools.manager.ConfigManager;
 import com.ultikits.ultitools.services.TeleportService;
 
 import org.bukkit.entity.Player;
@@ -23,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,18 +38,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Proves {@code /friend tp} observes an in-place reload of the {@link SocialConfig} bean
- * {@link FriendService} was injected with, which is what {@code /ul reload UltiSocial} does on
- * UltiTools 6.3.0 ({@code ConfigManager#reloadConfigs} calls {@code init(plugin)} again on the same
- * instance). Backs the {@code ultisocial.lifecycle.reload} checklist row (UltiKits/UltiSocial#13).
+ * UltiKits/UltiSocial#13: {@code /ul reload UltiSocial} re-reads {@code config/social.yml} through
+ * {@link ConfigManager#reloadConfigs}, which calls {@code init(plugin)} again on the SAME
+ * {@link SocialConfig} instance that was registered at load. This test drives a real
+ * {@link ConfigManager} through {@code register} and {@code reloadConfigs}, asserts the registered
+ * instance is the one {@link FriendService} holds, and proves {@code /friend tp} observes the reload
+ * on its very next invocation, i.e. nothing caches {@code tp_to_friend.enabled}. Backs the
+ * {@code ultisocial.lifecycle.reload} checklist row.
  * <p>
- * This test calls {@code init(plugin)} directly rather than the framework's reload entry point, so
- * it relies on two framework facts it does not itself assert: {@code PluginManager} registers the
- * {@code ConfigManager}'s own config instances as container singletons, and
- * {@code ConfigManager#reloadConfigs} re-initialises those instances rather than replacing them. A
- * framework change that re-instantiates config beans on reload invalidates this test; the
- * checklist row remains the end-to-end proof. It is a regression guard for call-time config reads,
- * not red on the pre-migration module (whose defect was that the framework reload never ran).
+ * One framework fact remains assumed rather than asserted: {@code PluginManager} injects the
+ * {@code ConfigManager}'s registered instance into the container. A regression guard, not a
+ * reproduction of #13: that defect was the module's override never reaching
+ * {@code reloadConfigs}, which a unit test cannot exercise without the framework's managers; the
+ * real-machine row covers it end to end.
  */
 @DisplayName("/friend tp observes an in-place SocialConfig reload (UltiKits/UltiSocial#13)")
 class SocialConfigReloadTest {
@@ -65,7 +69,7 @@ class SocialConfigReloadTest {
     }
 
     @Test
-    @DisplayName("disabling tp_to_friend.enabled and re-initialising the same config refuses the next /friend tp")
+    @DisplayName("disabling tp_to_friend.enabled and reloading through ConfigManager refuses the next /friend tp")
     @SuppressWarnings("unchecked")
     void inPlaceReloadOfTpToFriendEnabledIsObserved() throws Exception {
         File configFile = moduleFolder.resolve("config").resolve("social.yml").toFile();
@@ -76,7 +80,10 @@ class SocialConfigReloadTest {
         setField(UltiToolsPlugin.class, configPlugin, "resourceFolderPath", moduleFolder.toString());
 
         SocialConfig config = new SocialConfig("config/social.yml");
-        config.init(configPlugin);
+        ConfigManager configManager = new ConfigManager();
+        configManager.register(configPlugin, config);
+        Map<String, AbstractConfigEntity> registered = configManager.getAllConfigEntities(configPlugin);
+        assertThat(registered.values()).singleElement().isSameAs(config);
         assertThat(config.isTpToFriendEnabled()).isTrue();
 
         DataOperator<FriendshipData> dataOperator = mock(DataOperator.class);
@@ -89,6 +96,7 @@ class SocialConfigReloadTest {
         FriendService service = new FriendService();
         setField(FriendService.class, service, "config", config);
         setField(FriendService.class, service, "dataOperator", dataOperator);
+        assertThat(registered.values()).singleElement().isSameAs(service.getConfig());
         FriendCommand command = new FriendCommand(service, mock(TeleportService.class));
         Player player = UltiSocialTestHelper.createMockPlayer("Tester1", UUID.randomUUID());
 
@@ -97,7 +105,7 @@ class SocialConfigReloadTest {
         verify(player, never()).sendMessage(contains("已禁用"));
 
         write(configFile, "tp_to_friend:\n  enabled: false\n");
-        config.init(configPlugin);
+        configManager.reloadConfigs(configPlugin);
 
         command.teleportToFriend(player, "NoSuchFriend01");
         verify(player).sendMessage(contains("已禁用"));
