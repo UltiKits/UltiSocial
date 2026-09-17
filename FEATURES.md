@@ -46,8 +46,8 @@ for UAT execution and issue reconciliation — the public description of these f
 
 ### A module-wide fact that shapes almost every row below: this module barely uses its own i18n catalogue
 
-`lang/en.yml`/`lang/zh.yml` each declare 54 keys — an apparently-complete bilingual catalogue
-covering every command, both GUIs, and every notification. **Only 5 of the 54 are ever read**
+`lang/en.yml`/`lang/zh.yml` each declare 53 keys — an apparently-complete bilingual catalogue
+covering every command, both GUIs, and every notification. **Only 5 of the 53 are ever read**
 (`grep -rhoE 'i18n\("[a-z_]+"\)' src/main/java/ | sort -u`: `already_sent_request`,
 `no_pending_request`, `not_friend`, `request_expired`, `request_not_exist`, all five call sites
 inside `FriendService`). Every other player-facing string in this module is either:
@@ -101,14 +101,16 @@ GUI-exclusion register for this module (`FriendListGUI`, `BlockListGUI` — see
 This document's command-row count matches the `@CmdMapping` annotation-site count exactly (13
 against 13).
 
-**Reconciliation note — event Kind (3 handler methods against 2 `event`-Kind rows below):** a
+**Reconciliation note — event Kind (3 handler methods against 3 `event`-Kind rows below):** a
 deliberate, explained mismatch, the same shape as UltiBackup's own reconciliation note.
 `SocialListener` carries 3 `@EventHandler` methods; only `onPlayerJoin` and `onPlayerQuit` are
 catalogued as `event`-Kind rows in `## Player Presence Notifications` below. The third
 (`onInventoryClick`, which dispatches to two private handlers for the two GUI classes) is the
 click-routing implementation *for* this module's `gui`-Kind rows, not an independent
 player-visible behaviour of its own — named, by method, in each `gui`-Kind row's own Feature
-text in `## GUI` below.
+text in `## GUI` below. The third `event`-Kind row, `ultisocial.lifecycle.reload` in
+`## Lifecycle Hooks`, has no `@EventHandler` of its own: it is `event`-Kind because the framework's
+`/ul reload` drives it, not a command this repository maps.
 
 ## Friend Management Commands
 
@@ -153,11 +155,22 @@ third, which is `ultisocial.gui.*`'s own click-routing implementation).
 | ultisocial.event.friend-offline-notify | Notify every online friend of a quitting player, using `NotificationService` if a bean is available, otherwise a plain chat message; also unconditionally clears the quitting player's friend/blacklist caches regardless of the notification toggle. The notification text is `SocialConfig#friendOfflineMessage` (Chinese-default, config-driven, not `language`-affected) | event | quit the server while at least one online friend is watching, with `notifications.friend_offline: true` | n/a | n/a | internal | brief | SocialListener#onPlayerQuit |
 | ultisocial.event.friend-online-notify | Notify every online friend of a joining player, using `NotificationService` if a bean is available, otherwise a plain chat message. The notification text is `SocialConfig#friendOnlineMessage` (Chinese-default, config-driven, not `language`-affected) | event | join the server while at least one online friend is watching, with `notifications.friend_online: true` | n/a | n/a | internal | brief | SocialListener#onPlayerJoin |
 
-## Module Reload
+## Lifecycle Hooks
+
+As of UltiTools 6.3.0 the framework's `reloadSelf()` and `unregisterSelf()` are `final` template
+methods. This module's former overrides of both only logged a literal English line and never
+called `super`, so they were deleted rather than renamed (`UltiKits/UltiSocial#13`): it has no
+`onReload()` or `onUnregister()` hook, and prints no reload or unload line of its own.
+`ConfigManager#reloadConfigs` re-initialises, in place, the same `SocialConfig` instance the
+container injected into `FriendService`, and `FriendCommand`, `FriendListGUI` and `SocialListener`
+read it through `FriendService#getConfig()` at call time, so `/ul reload UltiSocial` (or bare
+`/ul reload`, which reloads every module) changes what the next command does.
+`ultisocial.lifecycle.reload` supersedes `ultisocial.event.module-reload` (retired with
+`UltiKits/UltiSocial#13`; its Phase 10 verdict recorded the defect, not this behaviour).
 
 | ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
 |---|---|---|---|---|---|---|---|---|
-| ultisocial.event.module-reload | Intended to reload this module's configuration from disk when the framework reloads it; in reality does nothing but log a success line — `UltiSocial#reloadSelf()` overrides the framework's `reloadSelf()` WITHOUT calling `super.reloadSelf()`, so `SocialConfig` is never re-read and the printed success message describes work that never happened. A known product defect, `UltiKits/UltiSocial#13`, not fixed here per this phase's zero-new-code rule | event | `/ul reload` or `/ul reload UltiSocial` (framework-level; this module declares no `/friend reload` subcommand of its own) | n/a | n/a | admin | brief | UltiSocial#reloadSelf |
+| ultisocial.lifecycle.reload | `/ul reload UltiSocial` re-reads `config/social.yml` into the running module, so an edited `tp_to_friend.enabled` governs the next `/friend tp` without a restart; the framework logs its own `Module 'UltiSocial' reloaded.` line and this module adds no reload work or line of its own. Before `UltiKits/UltiSocial#13` the module's reload override replaced the framework's reload and only logged `UltiSocial configuration reloaded!`, so the reload reported success without reloading anything and an edit took effect only after a restart | event | `/ul reload UltiSocial`, or bare `/ul reload` (framework calls `reloadSelf()`, which reloads configuration, refreshes language, runs the `@ConditionalOnConfig` drift check and logs its own per-module line; this module declares no `/friend reload` subcommand) | n/a | n/a | admin | brief | FriendCommand#teleportToFriend |
 
 ## Scheduled Tasks
 

@@ -3,7 +3,6 @@
 
 # 系统消息
 social_enabled: "UltiSocial 已启用！"
-social_disabled: "UltiSocial 已禁用！"
 
 # 好友系统消息
 friend_added: "&a你和 {PLAYER} 成为了好友！"
