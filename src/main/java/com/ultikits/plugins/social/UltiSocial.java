@@ -40,16 +40,6 @@ public class UltiSocial extends UltiToolsPlugin {
     }
 
     @Override
-    public void unregisterSelf() {
-        getLogger().info("UltiSocial has been disabled!");
-    }
-
-    @Override
-    public void reloadSelf() {
-        getLogger().info("UltiSocial configuration reloaded!");
-    }
-
-    @Override
     public List<String> supported() {
         return Arrays.asList("zh", "en");
     }

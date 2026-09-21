@@ -3,7 +3,6 @@
 
 # System Messages
 social_enabled: "UltiSocial has been enabled!"
-social_disabled: "UltiSocial has been disabled!"
 
 # Friend System Messages
 friend_added: "&aYou and {PLAYER} are now friends!"
