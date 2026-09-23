@@ -31,16 +31,24 @@ import static org.mockito.Mockito.mock;
  * keys in a fresh file IS the module's declared configuration surface. These tests drive a real
  * {@link ConfigManager} against an empty module folder and read back the file it writes.
  * <p>
+ * The file holds the 19 settings {@link SocialConfig} declares. 17 of them are read by the module;
+ * the other two, {@code messages.player_blocked} and {@code messages.player_unblocked}, are declared
+ * but read by nothing, and are tracked in UltiKits/UltiSocial#23 (to be decided in wave 3). They are
+ * listed here because a fresh file does contain them; this test does not claim they take effect.
+ * <p>
  * UltiKits/UltiSocial#15: {@code notifications.friend_join_world} declared a "notify when a friend
  * joins your world" feature that was never implemented; per the maintainer's 2026-09-22 decision the
  * setting is removed rather than the feature built (tracked as a request in UltiKits/UltiSocial#21).
  * The assertion is written as what a fresh file must hold, not as what the class must lack, so it
  * runs against the code before the removal and fails there.
  */
-@DisplayName("a fresh config/social.yml holds exactly the settings this module reads (UltiKits/UltiSocial#15)")
+@DisplayName("a fresh config/social.yml holds exactly the settings SocialConfig declares (UltiKits/UltiSocial#15)")
 class SocialConfigFreshFileTest {
 
-    /** Every key a fresh file must hold, in the order {@link SocialConfig} declares them. */
+    /**
+     * Every key a fresh file must hold, in the order {@link SocialConfig} declares them. The last two
+     * are declared but never read (UltiKits/UltiSocial#23).
+     */
     private static final List<String> EXPECTED_KEYS = Arrays.asList(
             "max_friends",
             "request_timeout",
@@ -106,7 +114,7 @@ class SocialConfigFreshFileTest {
     }
 
     @Test
-    @DisplayName("the whole file holds exactly the 19 settings FEATURES.md lists, and no other")
+    @DisplayName("the whole file holds exactly the 19 settings SocialConfig declares and FEATURES.md lists, and no other")
     void holdsExactlyTheDocumentedKeys() throws Exception {
         YamlConfiguration yaml = freshFile();
 
