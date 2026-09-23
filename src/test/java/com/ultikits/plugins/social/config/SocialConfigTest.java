@@ -41,13 +41,6 @@ class SocialConfigTest {
         }
 
         @Test
-        @DisplayName("Should have friend join world notifications disabled by default")
-        void notifyFriendJoinWorld() {
-            SocialConfig config = createRealConfig();
-            assertThat(config.isNotifyFriendJoinWorld()).isFalse();
-        }
-
-        @Test
         @DisplayName("Should have teleport to friend enabled by default")
         void tpToFriendEnabled() {
             SocialConfig config = createRealConfig();
@@ -187,14 +180,6 @@ class SocialConfigTest {
             SocialConfig config = createRealConfig();
             config.setNotifyFriendOffline(false);
             assertThat(config.isNotifyFriendOffline()).isFalse();
-        }
-
-        @Test
-        @DisplayName("Should update notify friend join world")
-        void setNotifyFriendJoinWorld() {
-            SocialConfig config = createRealConfig();
-            config.setNotifyFriendJoinWorld(true);
-            assertThat(config.isNotifyFriendJoinWorld()).isTrue();
         }
 
         @Test
