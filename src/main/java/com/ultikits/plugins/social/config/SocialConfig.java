@@ -34,9 +34,6 @@ public class SocialConfig extends AbstractConfigEntity {
     @ConfigEntry(path = "notifications.friend_offline", comment = "Notify when friend goes offline")
     private boolean notifyFriendOffline = true;
 
-    @ConfigEntry(path = "notifications.friend_join_world", comment = "Notify when friend joins your world")
-    private boolean notifyFriendJoinWorld = false;
-
     @ConfigEntry(path = "tp_to_friend.enabled", comment = "Allow teleporting to friends")
     private boolean tpToFriendEnabled = true;
 

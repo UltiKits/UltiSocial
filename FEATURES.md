@@ -35,8 +35,10 @@ for UAT execution and issue reconciliation — the public description of these f
   override (grep confirms zero uses of `@CmdMapping(permission=)` in this class), so every
   command row below reads `ultisocial.use` with no suffix.
 - **Source:** `ClassName#member` — the class and member that actually reads or applies the
-  feature — for every Kind, `config` included: all 20 `config` rows below cite the reading
-  member, not `SocialConfig`'s own field declaration.
+  feature — for every Kind, `config` included: 17 of the 19 `config` rows below cite the reading
+  member, not `SocialConfig`'s own field declaration; the other two, `messages.player_blocked` and
+  `messages.player_unblocked`, have no reading member at all and cite the declaring field, saying
+  so in the same cell.
 - **Row order:** by section, then by ID ascending within the section.
 - **No manual prose:** no troubleshooting column, no explanatory paragraphs, no draft page text.
   A hazard noticed while reading becomes a negative checklist row, not a note here. Where a
@@ -92,9 +94,10 @@ find <repo-root>/src/main/java -path '*/gui/*' -name '*.java' -not -path '*/targ
 
 **Positive control:** the line-start form returns `@CmdExecutor` = 1, `@CmdMapping` = 13,
 `@EventListener` = 1 (class), `@EventHandler` = 3 (handler methods), `@Scheduled` = 1,
-`@ConditionalOnConfig` = 0, `@ConfigEntity` = 1, `@ConfigEntry` = 20, `@Table` = 2 — confirmed by
+`@ConditionalOnConfig` = 0, `@ConfigEntity` = 1, `@ConfigEntry` = 19, `@Table` = 2 — confirmed by
 reading `FriendCommand.java` directly (13 `@CmdMapping` sites at lines 49, 55, 73, 89, 94, 99,
-104, 122, 168, 211, 247, 256, 264) and `SocialConfig.java` (20 `@ConfigEntry` sites). The
+104, 122, 168, 211, 247, 256, 264) and `SocialConfig.java` (19 `@ConfigEntry` sites; 20 before
+`UltiKits/UltiSocial#15` removed `notifications.friend_join_world`). The
 `find`-based GUI-class count above returns 2, matching Phase 9's own independently-derived
 GUI-exclusion register for this module (`FriendListGUI`, `BlockListGUI` — see
 `.planning/phases/09-module-ecosystem-readiness-and-test-coverage/gui-exclusions/UltiSocial.md`).
@@ -196,40 +199,44 @@ blocked them; only the blocker's own list ever shows the relationship.
 
 ## Configuration
 
-Every `@ConfigEntry`-annotated field on this module's one `@ConfigEntity` class (20 keys total,
-matching the reconciliation table's own `@ConfigEntry` count of 20 exactly). This module ships NO
+Every `@ConfigEntry`-annotated field on this module's one `@ConfigEntity` class (19 keys total,
+matching the reconciliation table's own `@ConfigEntry` count of 19 exactly). This module ships NO
 `config/social.yml` resource under `src/main/resources` — the file is generated entirely from
 these `@ConfigEntry` field defaults the first time the module boots.
 
-**Three keys are declared but have no reader anywhere in production code** — a distinct defect
+**Two keys are declared but have no reader anywhere in production code** — a distinct defect
 from the language-catalogue one above, since these are genuinely configurable fields with no
 consumer at all, not fixed text:
 
-- `notifications.friend_join_world` — no `PlayerChangedWorldEvent` handler exists in this module
-  at all; the "notify when a friend joins your world" feature this key implies was never
-  implemented. `UltiKits/UltiSocial#15`.
 - `messages.player_blocked` / `messages.player_unblocked` — `FriendCommand#blockPlayer`/
   `#unblockPlayer` send their own hardcoded Chinese literals instead of reading
   `SocialConfig#getPlayerBlockedMessage()`/`#getPlayerUnblockedMessage()`; grep confirms zero
-  call sites for either getter. `UltiKits/UltiSocial#15`.
+  call sites for either getter. Part of `UltiKits/UltiSocial#14` (the two parallel text mechanisms,
+  of which only one is live).
+
+A third, `notifications.friend_join_world`, declared a "notify when a friend joins your world"
+feature that was never implemented (no handler for a player changing worlds existed anywhere in
+this module). It is removed as of `UltiKits/UltiSocial#15` rather than built — the feature is
+recorded as a request in `UltiKits/UltiSocial#21`; removing the setting does not reject it. A fresh
+`config/social.yml` no longer contains it; an existing file keeps it, because the framework never
+deletes a key from an operator's file.
 
 | ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
 |---|---|---|---|---|---|---|---|---|
-| ultisocial.config.social.gui_title | The friend list GUI's own title template, `{COUNT}`/`{MAX}` placeholders | config | `config/social.yml: gui_title (default: a Simplified Chinese "friend list" title plus the `{COUNT}`/`{MAX}` placeholders, `SocialConfig.java:49`)` | n/a | n/a | admin | brief | FriendListGUI#FriendListGUI |
+| ultisocial.config.social.gui_title | The friend list GUI's own title template, `{COUNT}`/`{MAX}` placeholders | config | `config/social.yml: gui_title (default: a Simplified Chinese "friend list" title plus the `{COUNT}`/`{MAX}` placeholders, `SocialConfig.java:46`)` | n/a | n/a | admin | brief | FriendListGUI#FriendListGUI |
 | ultisocial.config.social.max_friends | Maximum number of friends per player (range 1-500, enforced by `@Range`); enforced both when sending a request and when accepting one | config | `config/social.yml: max_friends (default: 50)` | n/a | n/a | admin | brief | FriendService#sendRequest, FriendService#acceptRequest |
-| ultisocial.config.social.messages.already_friends | Message shown when the sender tries to friend-request someone already on their friends list | config | `config/social.yml: messages.already_friends (default: a Simplified Chinese "you are already friends with {PLAYER}" sentence, `SocialConfig.java:85`)` | n/a | n/a | admin | brief | FriendService#sendRequest |
-| ultisocial.config.social.messages.blocked | Message shown when a friend-request attempt is refused because either party has blocked the other (bidirectional check) | config | `config/social.yml: messages.blocked (default: a Simplified Chinese "cannot perform this action with {PLAYER} due to a blacklist relationship" sentence, `SocialConfig.java:89`)` | n/a | n/a | admin | brief | FriendService#sendRequest |
-| ultisocial.config.social.messages.friend_added | Message shown to BOTH players when a friend request is accepted | config | `config/social.yml: messages.friend_added (default: a Simplified Chinese "you and {PLAYER} are now friends" sentence, `SocialConfig.java:53`)` | n/a | n/a | admin | brief | FriendService#acceptRequest |
-| ultisocial.config.social.messages.friend_offline | Notification sent to online friends when a player disconnects | config | `config/social.yml: messages.friend_offline (default: a Simplified Chinese "your friend {PLAYER} has gone offline" sentence, `SocialConfig.java:65`)` | n/a | n/a | admin | brief | SocialListener#onPlayerQuit |
-| ultisocial.config.social.messages.friend_online | Notification sent to online friends when a player joins | config | `config/social.yml: messages.friend_online (default: a Simplified Chinese "your friend {PLAYER} is now online" sentence, `SocialConfig.java:61`)` | n/a | n/a | admin | brief | SocialListener#onPlayerJoin |
-| ultisocial.config.social.messages.friend_removed | Message shown to the player who removed a friend (the other side receives no message) | config | `config/social.yml: messages.friend_removed (default: a Simplified Chinese "you have removed friend {PLAYER}" sentence, `SocialConfig.java:57`)` | n/a | n/a | admin | brief | FriendService#removeFriend |
-| ultisocial.config.social.messages.max_friends_reached | Message shown when a friend-request send or accept would exceed `max_friends` | config | `config/social.yml: messages.max_friends_reached (default: a Simplified Chinese "your friend count has reached the limit" sentence, `SocialConfig.java:81`)` | n/a | n/a | admin | brief | FriendService#sendRequest, FriendService#acceptRequest |
-| ultisocial.config.social.messages.player_blocked | Declared as the message shown when a player is added to the blacklist; never read — `FriendCommand#blockPlayer` sends its own hardcoded Chinese literal instead. Known product defect, `UltiKits/UltiSocial#15` | config | `config/social.yml: messages.player_blocked (default: a Simplified Chinese "{PLAYER} added to blacklist" sentence, `SocialConfig.java:93`, has no effect)` | n/a | n/a | admin | brief | SocialConfig#playerBlockedMessage (declared, never read outside this class) |
-| ultisocial.config.social.messages.player_unblocked | Declared as the message shown when a player is removed from the blacklist; never read — `FriendCommand#unblockPlayer` sends its own hardcoded Chinese literal instead. Known product defect, `UltiKits/UltiSocial#15` | config | `config/social.yml: messages.player_unblocked (default: a Simplified Chinese "{PLAYER} removed from blacklist" sentence, `SocialConfig.java:97`, has no effect)` | n/a | n/a | admin | brief | SocialConfig#playerUnblockedMessage (declared, never read outside this class) |
-| ultisocial.config.social.messages.request_denied | Message shown to the DENYING player (the one who ran `/friend deny`, i.e. the original request's receiver) confirming the denial went through — NOT sent to the original sender, who receives no notification of the denial at all | config | `config/social.yml: messages.request_denied (default: a Simplified Chinese "denied {PLAYER}'s friend request" sentence, `SocialConfig.java:77`)` | n/a | n/a | admin | brief | FriendService#denyRequest |
-| ultisocial.config.social.messages.request_received | Message shown to the receiver when a friend request arrives | config | `config/social.yml: messages.request_received (default: a Simplified Chinese "{PLAYER} wants to be your friend, type /friend accept {PLAYER} to accept" sentence, `SocialConfig.java:73`)` | n/a | n/a | admin | brief | FriendService#sendRequest |
-| ultisocial.config.social.messages.request_sent | Message shown to the sender when a friend request is successfully queued | config | `config/social.yml: messages.request_sent (default: a Simplified Chinese "friend request sent to {PLAYER}" sentence, `SocialConfig.java:69`)` | n/a | n/a | admin | brief | FriendService#sendRequest |
-| ultisocial.config.social.notifications.friend_join_world | Declared as a "notify when a friend joins your world" toggle; never read — no per-world-change handler exists anywhere in this module. Known product defect, `UltiKits/UltiSocial#15` | config | `config/social.yml: notifications.friend_join_world (default: false, has no effect)` | n/a | n/a | admin | brief | SocialConfig#notifyFriendJoinWorld (declared, never read outside this class) |
+| ultisocial.config.social.messages.already_friends | Message shown when the sender tries to friend-request someone already on their friends list | config | `config/social.yml: messages.already_friends (default: a Simplified Chinese "you are already friends with {PLAYER}" sentence, `SocialConfig.java:82`)` | n/a | n/a | admin | brief | FriendService#sendRequest |
+| ultisocial.config.social.messages.blocked | Message shown when a friend-request attempt is refused because either party has blocked the other (bidirectional check) | config | `config/social.yml: messages.blocked (default: a Simplified Chinese "cannot perform this action with {PLAYER} due to a blacklist relationship" sentence, `SocialConfig.java:86`)` | n/a | n/a | admin | brief | FriendService#sendRequest |
+| ultisocial.config.social.messages.friend_added | Message shown to BOTH players when a friend request is accepted | config | `config/social.yml: messages.friend_added (default: a Simplified Chinese "you and {PLAYER} are now friends" sentence, `SocialConfig.java:50`)` | n/a | n/a | admin | brief | FriendService#acceptRequest |
+| ultisocial.config.social.messages.friend_offline | Notification sent to online friends when a player disconnects | config | `config/social.yml: messages.friend_offline (default: a Simplified Chinese "your friend {PLAYER} has gone offline" sentence, `SocialConfig.java:62`)` | n/a | n/a | admin | brief | SocialListener#onPlayerQuit |
+| ultisocial.config.social.messages.friend_online | Notification sent to online friends when a player joins | config | `config/social.yml: messages.friend_online (default: a Simplified Chinese "your friend {PLAYER} is now online" sentence, `SocialConfig.java:58`)` | n/a | n/a | admin | brief | SocialListener#onPlayerJoin |
+| ultisocial.config.social.messages.friend_removed | Message shown to the player who removed a friend (the other side receives no message) | config | `config/social.yml: messages.friend_removed (default: a Simplified Chinese "you have removed friend {PLAYER}" sentence, `SocialConfig.java:54`)` | n/a | n/a | admin | brief | FriendService#removeFriend |
+| ultisocial.config.social.messages.max_friends_reached | Message shown when a friend-request send or accept would exceed `max_friends` | config | `config/social.yml: messages.max_friends_reached (default: a Simplified Chinese "your friend count has reached the limit" sentence, `SocialConfig.java:78`)` | n/a | n/a | admin | brief | FriendService#sendRequest, FriendService#acceptRequest |
+| ultisocial.config.social.messages.player_blocked | Declared as the message shown when a player is added to the blacklist; never read — `FriendCommand#blockPlayer` sends its own hardcoded Chinese literal instead. Known product defect, `UltiKits/UltiSocial#14` | config | `config/social.yml: messages.player_blocked (default: a Simplified Chinese "{PLAYER} added to blacklist" sentence, `SocialConfig.java:90`, has no effect)` | n/a | n/a | admin | brief | SocialConfig#playerBlockedMessage (declared, never read outside this class) |
+| ultisocial.config.social.messages.player_unblocked | Declared as the message shown when a player is removed from the blacklist; never read — `FriendCommand#unblockPlayer` sends its own hardcoded Chinese literal instead. Known product defect, `UltiKits/UltiSocial#14` | config | `config/social.yml: messages.player_unblocked (default: a Simplified Chinese "{PLAYER} removed from blacklist" sentence, `SocialConfig.java:94`, has no effect)` | n/a | n/a | admin | brief | SocialConfig#playerUnblockedMessage (declared, never read outside this class) |
+| ultisocial.config.social.messages.request_denied | Message shown to the DENYING player (the one who ran `/friend deny`, i.e. the original request's receiver) confirming the denial went through — NOT sent to the original sender, who receives no notification of the denial at all | config | `config/social.yml: messages.request_denied (default: a Simplified Chinese "denied {PLAYER}'s friend request" sentence, `SocialConfig.java:74`)` | n/a | n/a | admin | brief | FriendService#denyRequest |
+| ultisocial.config.social.messages.request_received | Message shown to the receiver when a friend request arrives | config | `config/social.yml: messages.request_received (default: a Simplified Chinese "{PLAYER} wants to be your friend, type /friend accept {PLAYER} to accept" sentence, `SocialConfig.java:70`)` | n/a | n/a | admin | brief | FriendService#sendRequest |
+| ultisocial.config.social.messages.request_sent | Message shown to the sender when a friend request is successfully queued | config | `config/social.yml: messages.request_sent (default: a Simplified Chinese "friend request sent to {PLAYER}" sentence, `SocialConfig.java:66`)` | n/a | n/a | admin | brief | FriendService#sendRequest |
 | ultisocial.config.social.notifications.friend_offline | Enable the friend-offline chat/notification-service message | config | `config/social.yml: notifications.friend_offline (default: true)` | n/a | n/a | admin | brief | SocialListener#onPlayerQuit |
 | ultisocial.config.social.notifications.friend_online | Enable the friend-online chat/notification-service message | config | `config/social.yml: notifications.friend_online (default: true)` | n/a | n/a | admin | brief | SocialListener#onPlayerJoin |
 | ultisocial.config.social.request_timeout | Friend request expiry, in seconds (range 10-3600, enforced by `@Range`); checked by the 1-minute scheduled sweep, inline on `/friend accept` (a request past this age is treated as `request_expired` even if the sweep has not yet removed it), and inline on `/friend requests`/`getPendingRequests` (an expired request is filtered out of the view before it is shown) — NOT checked by `/friend deny`, which removes a request by sender name unconditionally whether or not it has expired | config | `config/social.yml: request_timeout (default: 60)` | n/a | n/a | admin | brief | FriendService#cleanupExpiredRequests, FriendService#acceptRequest, FriendService#getPendingRequests, FriendRequest#isExpired |

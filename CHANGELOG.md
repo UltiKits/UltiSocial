@@ -40,3 +40,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   （`/ul reload UltiSocial` 或 `/ul reload` 时）。两者均为英文字面量而非语言键；同时从两个语言文件中移除描述
   卸载行但从未被使用的 `social_disabled` 语言键。UltiTools 6.3.0 会为每个模块输出一行重载日志
   （`Module 'UltiSocial' reloaded.`）（UltiKits/UltiSocial#13）。
+- The `notifications.friend_join_world` setting in `config/social.yml` (default `false`, described
+  as "Notify when friend joins your world"). It never had any effect in any version: nothing read
+  it, and this module has no notification for a friend entering your world at all, so switching it
+  on or off never changed anything a player saw. The notification is recorded as a feature request,
+  UltiKits/UltiSocial#21 — removing the setting does not reject the feature. A server upgraded from
+  an earlier version keeps the key in its `social.yml`, because the framework never deletes a key
+  from an operator's file; the key can simply be deleted, and leaving it there changes nothing
+  players see (UltiKits/UltiSocial#15).
+- 移除 `config/social.yml` 中的 `notifications.friend_join_world` 设置项（默认 `false`，说明为"好友进入你所在
+  世界时通知"）。它在任何版本中都从未生效：没有任何代码读取它，本模块也根本没有"好友进入你所在世界"的通知，
+  因此开启或关闭它从未改变玩家看到的任何内容。该通知已作为功能请求记录在 UltiKits/UltiSocial#21——删除设置
+  并不代表否决该功能。从旧版本升级的服务器，其 `social.yml` 中仍会保留该键，因为框架从不删除运维文件中的键；
+  直接删除该键即可，保留它也不会改变玩家看到的任何内容（UltiKits/UltiSocial#15）。
