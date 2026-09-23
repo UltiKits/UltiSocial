@@ -7,6 +7,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- A warning for a setting this version no longer reads. If `notifications.friend_join_world` (removed,
+  see `### Removed`) is still in your `config/social.yml`, which it will be on any server that has run
+  an earlier version, the module logs one warning when it is enabled and on every reload of it
+  (`/ul reload` or `/ul reload UltiSocial`), naming the module, the file and the key and saying that
+  nothing replaces it. Deleting the key from the file silences the warning; leaving it there changes
+  nothing else (UltiKits/UltiSocial#15).
+- 新增对本版本已不再读取的设置项的警告。若已移除的 `notifications.friend_join_world`（见 `### Removed`）仍保留在
+  你的 `config/social.yml` 中（运行过旧版本的服务器都会如此），本模块会在启用时以及每次重载本模块时
+  （`/ul reload` 或 `/ul reload UltiSocial`）输出一条警告，指明模块、文件和键，并说明没有其他设置取代它。
+  从文件中删除该键即可消除警告；保留它不会产生其他任何影响（UltiKits/UltiSocial#15）。
+
 ### Fixed
 
 - Reloading this module (`/ul reload UltiSocial`, or `/ul reload` for every module) now re-reads

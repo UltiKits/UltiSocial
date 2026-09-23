@@ -105,16 +105,17 @@ This document's command-row count matches the `@CmdMapping` annotation-site coun
 against 13).
 
 **Reconciliation note — event Kind (3 `@EventHandler` methods, 2 of them catalogued as `event`
-rows; plus 1 `event` row with no handler; 3 `event` rows in total):** the equal totals are a
-coincidence, not a 1:1 match, the same shape as UltiBackup's own reconciliation note.
+rows; plus 2 `event` rows with no handler; 4 `event` rows in total):** the totals are not a 1:1
+match, the same shape as UltiBackup's own reconciliation note.
 `SocialListener` carries 3 `@EventHandler` methods; only `onPlayerJoin` and `onPlayerQuit` are
 catalogued as `event`-Kind rows in `## Player Presence Notifications` below. The third
 (`onInventoryClick`, which dispatches to two private handlers for the two GUI classes) is the
 click-routing implementation *for* this module's `gui`-Kind rows, not an independent
 player-visible behaviour of its own — named, by method, in each `gui`-Kind row's own Feature
-text in `## GUI` below. The third `event`-Kind row, `ultisocial.lifecycle.reload` in
-`## Lifecycle Hooks`, has no `@EventHandler` of its own: it is `event`-Kind because the framework's
-`/ul reload` drives it, not a command this repository maps.
+text in `## GUI` below. The third and fourth `event`-Kind rows, `ultisocial.lifecycle.reload` and
+`ultisocial.lifecycle.removed-key-warning` in `## Lifecycle Hooks`, have no `@EventHandler` of their
+own: they are `event`-Kind because the framework's module enable and `/ul reload` drive them, not a
+command this repository maps.
 
 ## Friend Management Commands
 
@@ -164,7 +165,9 @@ third, which is `ultisocial.gui.*`'s own click-routing implementation).
 As of UltiTools 6.3.0 the framework's `reloadSelf()` and `unregisterSelf()` are `final` template
 methods. This module's former overrides of both only logged a literal English line and never
 called `super`, so they were deleted rather than renamed (`UltiKits/UltiSocial#13`): it has no
-`onReload()` or `onUnregister()` hook, and prints no reload or unload line of its own.
+`onUnregister()` hook and prints no reload or unload line of its own. It does have an `onReload()`
+hook, added by `UltiKits/UltiSocial#15`, whose only work is the removed-key check of
+`ultisocial.lifecycle.removed-key-warning` (the same check also runs when the module is enabled).
 `ConfigManager#reloadConfigs` re-initialises, in place, the same `SocialConfig` instance the
 container injected into `FriendService`, and `FriendCommand`, `FriendListGUI` and `SocialListener`
 read it through `FriendService#getConfig()` at call time, so `/ul reload UltiSocial` (or bare
@@ -174,7 +177,8 @@ read it through `FriendService#getConfig()` at call time, so `/ul reload UltiSoc
 
 | ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
 |---|---|---|---|---|---|---|---|---|
-| ultisocial.lifecycle.reload | `/ul reload UltiSocial` re-reads `config/social.yml` into the running module, so an edited `tp_to_friend.enabled` governs the next `/friend tp` without a restart; the framework logs its own `Module 'UltiSocial' reloaded.` line and this module adds no reload work or line of its own. Before `UltiKits/UltiSocial#13` the module's reload override replaced the framework's reload and only logged `UltiSocial configuration reloaded!`, so the reload reported success without reloading anything and an edit took effect only after a restart | event | `/ul reload UltiSocial`, or bare `/ul reload` (framework calls `reloadSelf()`, which reloads configuration, refreshes language, runs the `@ConditionalOnConfig` drift check and logs its own per-module line; this module declares no `/friend reload` subcommand) | n/a | n/a | admin | brief | FriendCommand#teleportToFriend |
+| ultisocial.lifecycle.reload | `/ul reload UltiSocial` re-reads `config/social.yml` into the running module, so an edited `tp_to_friend.enabled` governs the next `/friend tp` without a restart; the framework logs its own `Module 'UltiSocial' reloaded.` line and this module adds no reload work of its own beyond the removed-key check of `ultisocial.lifecycle.removed-key-warning`, which prints a line only while `config/social.yml` still holds a key this version no longer reads. Before `UltiKits/UltiSocial#13` the module's reload override replaced the framework's reload and only logged `UltiSocial configuration reloaded!`, so the reload reported success without reloading anything and an edit took effect only after a restart | event | `/ul reload UltiSocial`, or bare `/ul reload` (framework calls `reloadSelf()`, which reloads configuration, refreshes language, runs the `@ConditionalOnConfig` drift check and logs its own per-module line; this module declares no `/friend reload` subcommand) | n/a | n/a | admin | brief | FriendCommand#teleportToFriend |
+| ultisocial.lifecycle.removed-key-warning | When the module is enabled and again on every reload of it (`/ul reload` or `/ul reload UltiSocial`), read the operator's own `config/social.yml` and, for each key this version no longer reads that is still in it, log one console WARNING naming the file, the key, what became of the setting and that the key can be deleted. The one such key is `notifications.friend_join_world`, removed by UltiKits/UltiSocial#15 (it never had any effect; the notification it described is the feature request UltiKits/UltiSocial#21, and no other setting replaces it); the framework writes a declared default only for a missing key and never deletes one, so every server that ran an earlier version still has it. The line is an English literal from this module, not a language key, so the `language` setting does not change it. A missing or unparseable file produces no warning, and an error inside the check itself is logged as one warning and never stops the module enabling or reloading. The file checked is the one `SocialConfig` binds (its `@ConfigEntity` value), not a second copy of its path | event | module enable (server start, or loading the module) and every reload of it: bare `/ul reload`, which reloads every module, or `/ul reload UltiSocial` | n/a | n/a | admin | brief | UltiSocial#registerSelf, UltiSocial#onReload, RemovedConfigKeys#warnAboutLeftovers |
 
 ## Scheduled Tasks
 
