@@ -48,6 +48,31 @@ public class FriendService {
     private final Map<UUID, Long> tpCooldowns = new ConcurrentHashMap<>();
     
     /**
+     * This module's language-file text for {@code key}, in the server's language. The GUIs, the
+     * command and the listener reach the catalogue through the service they already hold.
+     *
+     * @param key a key of {@code lang/en.yml} and {@code lang/zh.yml}
+     * @return the text, or {@code key} itself when the catalogue has no such key
+     */
+    public String i18n(String key) {
+        return plugin.i18n(key);
+    }
+
+    /**
+     * The message an operator configured, or the language file's text when the configured value is
+     * blank or unset (maintainer ruling 2026-09-24 (d)). Resolved each time a message is shown, never
+     * while the configuration reloads: the framework reloads configuration before it rebuilds the
+     * language, so a value resolved during a reload would come from the old language.
+     *
+     * @param configured    the value from {@code config/social.yml}
+     * @param catalogueText the language file's text for the same message
+     * @return the text to show, before placeholders and colour codes are applied
+     */
+    public static String configuredOr(String configured, String catalogueText) {
+        return configured == null || configured.trim().isEmpty() ? catalogueText : configured;
+    }
+
+    /**
      * Initialize the service.
      */
     @PostConstruct
@@ -76,7 +101,7 @@ public class FriendService {
         
         // Check blacklist (bidirectional)
         if (isBlocked(senderUuid, receiverUuid)) {
-            sender.sendMessage(config.getBlockedMessage()
+            sender.sendMessage(configuredOr(config.getBlockedMessage(), plugin.i18n("blocked"))
                 .replace("{PLAYER}", receiver.getName())
                 .replace("&", "§"));
             return false;
@@ -84,7 +109,7 @@ public class FriendService {
         
         // Check if already friends
         if (areFriends(senderUuid, receiverUuid)) {
-            sender.sendMessage(config.getAlreadyFriendsMessage()
+            sender.sendMessage(configuredOr(config.getAlreadyFriendsMessage(), plugin.i18n("already_friends"))
                 .replace("{PLAYER}", receiver.getName())
                 .replace("&", "§"));
             return false;
@@ -92,7 +117,7 @@ public class FriendService {
         
         // Check max friends limit
         if (getFriendCount(senderUuid) >= config.getMaxFriends()) {
-            sender.sendMessage(config.getMaxFriendsMessage().replace("&", "§"));
+            sender.sendMessage(configuredOr(config.getMaxFriendsMessage(), plugin.i18n("max_friends_reached")).replace("&", "§"));
             return false;
         }
         
@@ -121,11 +146,11 @@ public class FriendService {
         // Add request
         requests.add(FriendRequest.create(senderUuid, sender.getName(), receiverUuid));
         
-        sender.sendMessage(config.getRequestSentMessage()
+        sender.sendMessage(configuredOr(config.getRequestSentMessage(), plugin.i18n("request_sent"))
             .replace("{PLAYER}", receiver.getName())
             .replace("&", "§"));
         
-        receiver.sendMessage(config.getRequestReceivedMessage()
+        receiver.sendMessage(configuredOr(config.getRequestReceivedMessage(), plugin.i18n("request_received"))
             .replace("{PLAYER}", sender.getName())
             .replace("&", "§"));
         
@@ -160,7 +185,7 @@ public class FriendService {
         
         // Check max friends
         if (getFriendCount(receiverUuid) >= config.getMaxFriends()) {
-            receiver.sendMessage(config.getMaxFriendsMessage().replace("&", "§"));
+            receiver.sendMessage(configuredOr(config.getMaxFriendsMessage(), plugin.i18n("max_friends_reached")).replace("&", "§"));
             return false;
         }
         
@@ -172,13 +197,13 @@ public class FriendService {
         requests.remove(request);
         
         // Notify both players
-        receiver.sendMessage(config.getFriendAddedMessage()
+        receiver.sendMessage(configuredOr(config.getFriendAddedMessage(), plugin.i18n("friend_added"))
             .replace("{PLAYER}", senderName)
             .replace("&", "§"));
         
         Player sender = Bukkit.getPlayer(request.getSender());
         if (sender != null) {
-            sender.sendMessage(config.getFriendAddedMessage()
+            sender.sendMessage(configuredOr(config.getFriendAddedMessage(), plugin.i18n("friend_added"))
                 .replace("{PLAYER}", receiver.getName())
                 .replace("&", "§"));
         }
@@ -218,7 +243,7 @@ public class FriendService {
         
         requests.remove(request);
         
-        receiver.sendMessage(config.getRequestDeniedMessage()
+        receiver.sendMessage(configuredOr(config.getRequestDeniedMessage(), plugin.i18n("request_denied"))
             .replace("{PLAYER}", senderName)
             .replace("&", "§"));
         
@@ -267,7 +292,7 @@ public class FriendService {
         friendCache.remove(playerUuid);
         friendCache.remove(UUID.fromString(toRemove.getFriendUuid()));
         
-        player.sendMessage(config.getFriendRemovedMessage()
+        player.sendMessage(configuredOr(config.getFriendRemovedMessage(), plugin.i18n("friend_removed"))
             .replace("{PLAYER}", friendName)
             .replace("&", "§"));
         
@@ -345,7 +370,7 @@ public class FriendService {
                 try {
                     dataOperator.update(friend);
                 } catch (IllegalAccessException e) {
-                    plugin.getLogger().error("Failed to update friend data", e);
+                    plugin.getLogger().error(plugin.i18n("log_friend_update_failed"), e);
                 }
                 friendCache.remove(playerUuid);
                 break;
@@ -364,7 +389,7 @@ public class FriendService {
                 try {
                     dataOperator.update(friend);
                 } catch (IllegalAccessException e) {
-                    plugin.getLogger().error("Failed to update friend data", e);
+                    plugin.getLogger().error(plugin.i18n("log_friend_update_failed"), e);
                 }
                 friendCache.remove(playerUuid);
                 break;

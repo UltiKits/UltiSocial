@@ -20,7 +20,40 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   （`/ul reload` 或 `/ul reload UltiSocial`）输出一条警告，指明模块、文件和键，并说明没有其他设置取代它。
   从文件中删除该键即可消除警告；保留它不会产生其他任何影响（UltiKits/UltiSocial#15）。
 
+### Changed
+
+- The friend-list title (`gui_title`) and the ten messages in `config/social.yml`
+  (`messages.friend_added`, `friend_removed`, `friend_online`, `friend_offline`, `request_sent`,
+  `request_received`, `request_denied`, `max_friends_reached`, `already_friends`, `blocked`) now
+  follow `language` unless you have customised them. Their default is now blank, and a blank value
+  shows the language file's text in the server's language; previously the default was fixed Chinese
+  text, so `language: en` had no effect on them (UltiKits/UltiSocial#14). On upgrade, at start-up
+  and on every reload of the module, a value that is exactly the Chinese default an earlier version
+  shipped is replaced with a blank value and the file is saved; any other value is yours and is
+  shown as written. To keep the old Chinese text on an English server, write it back after
+  upgrading, changed in any way (even one character), since an exact copy of the old default is
+  blanked again.
+- `config/social.yml` 中的好友列表标题（`gui_title`）与十条消息（`messages.friend_added`、`friend_removed`、
+  `friend_online`、`friend_offline`、`request_sent`、`request_received`、`request_denied`、`max_friends_reached`、
+  `already_friends`、`blocked`）现在除非被你自定义，否则跟随 `language`。它们的默认值现为空，空值以服务器语言显示
+  语言文件中的文本；此前默认值是写死的中文，所以 `language: en` 对它们不起作用（UltiKits/UltiSocial#14）。升级后，
+  在启动时以及每次重载本模块时，与旧版本出厂中文默认值完全相同的值会被替换为空值并保存文件；其他任何值都视为你的
+  自定义，按原样显示。若想在英文服务器上保留旧的中文文本，请在升级后把它写回，并做任意改动（哪怕一个字符），
+  因为与旧默认值完全相同的副本会再次被清空。
+
 ### Fixed
+
+- `language: en` now applies to everything this module shows or logs: every `/friend` reply and the
+  help, both GUIs (titles, lore, game-mode names, click tips, buttons), the replies to GUI clicks, the
+  command description, and the console lines. Most of this was fixed Chinese text in every language,
+  although the language files already held English text for it that no code read; the console lines
+  were fixed English text and now follow `language: zh` too (UltiKits/UltiSocial#14). A private
+  message's own words are shown exactly as typed. The enable line now reads
+  `UltiSocial has been enabled!`; it used to name a version, v1.1.0, that this module never had.
+- `language: en` 现在对本模块显示或记录的全部内容生效：`/friend` 的所有回复与帮助、两个界面（标题、说明、游戏模式名称、
+  点击提示、按钮）、界面点击的回复、命令描述以及控制台日志。其中大部分原先在任何语言下都是写死的中文，而语言文件中其实已有
+  无人读取的英文文本；控制台日志原先写死为英文，现在也跟随 `language: zh`（UltiKits/UltiSocial#14）。私聊消息本身按原样显示。
+  启用日志现为 `UltiSocial has been enabled!`，此前其中写的版本号 v1.1.0 本模块从未有过。
 
 - Reloading this module (`/ul reload UltiSocial`, or `/ul reload` for every module) now re-reads
   `config/social.yml` and refreshes the language files, so an edited value such as
@@ -43,6 +76,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   此前两者都会一直生效到服务器重启（UltiKits/UltiSocial#13）。
 
 ### Removed
+
+- `messages.player_blocked` and `messages.player_unblocked` never took effect and have been removed;
+  they can be deleted from existing `config/social.yml` files. Nothing ever read them: `/friend block`
+  and `/friend unblock` replied with fixed text, and now reply from the language file (`lang/en.yml`,
+  `lang/zh.yml`), which is where to change those replies. A file that still holds either key gets
+  the same warning as `notifications.friend_join_world`, at start-up and on every reload of the
+  module (UltiKits/UltiSocial#23).
+- `messages.player_blocked` 与 `messages.player_unblocked` 从未生效，现已移除，可从现有的 `config/social.yml` 中删除。
+  从未有代码读取它们：`/friend block` 与 `/friend unblock` 的回复原为写死的文本，现在来自语言文件（`lang/en.yml`、
+  `lang/zh.yml`），要修改这两条回复请改那里。仍含其中任一键的文件，会在启动时以及每次重载本模块时收到与
+  `notifications.friend_join_world` 相同的警告（UltiKits/UltiSocial#23）。
 
 - The module's own console lines `UltiSocial has been disabled!` (on unload) and
   `UltiSocial configuration reloaded!` (on `/ul reload UltiSocial` or `/ul reload`). Both were

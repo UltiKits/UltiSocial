@@ -38,7 +38,8 @@ public class FriendListGUI implements InventoryHolder {
         this.viewer = viewer;
         this.friends = friendService.getFriends(viewer.getUniqueId());
         
-        String title = friendService.getConfig().getGuiTitle()
+        String title = FriendService.configuredOr(friendService.getConfig().getGuiTitle(),
+                friendService.i18n("gui_friend_list"))
             .replace("{COUNT}", String.valueOf(friends.size()))
             .replace("{MAX}", String.valueOf(friendService.getConfig().getMaxFriends()))
             .replace("&", "§");
@@ -47,6 +48,11 @@ public class FriendListGUI implements InventoryHolder {
         updateInventory();
     }
     
+    /** This module's language-file text for {@code key}, with its {@code &} colour codes applied. */
+    private String i18n(String key) {
+        return ChatColor.translateAlternateColorCodes('&', friendService.i18n(key));
+    }
+
     /**
      * Update inventory contents.
      */
@@ -92,29 +98,29 @@ public class FriendListGUI implements InventoryHolder {
             
             // Lore
             List<String> lore = new ArrayList<>();
-            lore.add(online ? ChatColor.GREEN + "● 在线" : ChatColor.GRAY + "○ 离线");
+            lore.add(online ? i18n("status_online") : i18n("status_offline"));
             
             if (online && onlineFriend != null) {
-                lore.add(ChatColor.GRAY + "世界: " + ChatColor.WHITE + onlineFriend.getWorld().getName());
+                lore.add(i18n("gui_world").replace("{WORLD}", onlineFriend.getWorld().getName()));
                 // Show game mode
                 String gameMode = onlineFriend.getGameMode().name();
                 String gameModeDisplay = formatGameMode(gameMode);
-                lore.add(ChatColor.GRAY + "模式: " + ChatColor.WHITE + gameModeDisplay);
+                lore.add(i18n("gui_mode").replace("{MODE}", gameModeDisplay));
             }
             
-            lore.add(ChatColor.GRAY + "添加时间: " + ChatColor.WHITE + formatTime(friend.getCreatedTime()));
+            lore.add(i18n("gui_added_time").replace("{TIME}", formatTime(friend.getCreatedTime())));
             lore.add("");
             
             if (online && friendService.getConfig().isTpToFriendEnabled()) {
-                lore.add(ChatColor.GREEN + "左键点击: 传送到好友");
+                lore.add(i18n("gui_click_tp"));
             }
             if (online) {
-                lore.add(ChatColor.AQUA + "右键点击: 发送私聊");
+                lore.add(i18n("gui_click_msg"));
             } else {
-                lore.add(ChatColor.RED + "右键点击: 删除好友");
+                lore.add(i18n("gui_click_remove_offline"));
             }
-            lore.add(ChatColor.YELLOW + "Shift+左键: " + (friend.isFavorite() ? "取消收藏" : "收藏好友"));
-            lore.add(ChatColor.RED + "Shift+右键: 删除好友");
+            lore.add(friend.isFavorite() ? i18n("gui_click_unfavorite") : i18n("gui_click_favorite"));
+            lore.add(i18n("gui_click_remove"));
             
             meta.setLore(lore);
             skull.setItemMeta(meta);
@@ -128,10 +134,10 @@ public class FriendListGUI implements InventoryHolder {
      */
     private String formatGameMode(String gameMode) {
         switch (gameMode.toUpperCase()) {
-            case "SURVIVAL": return "生存模式";
-            case "CREATIVE": return "创造模式";
-            case "ADVENTURE": return "冒险模式";
-            case "SPECTATOR": return "旁观模式";
+            case "SURVIVAL": return friendService.i18n("gamemode_survival");
+            case "CREATIVE": return friendService.i18n("gamemode_creative");
+            case "ADVENTURE": return friendService.i18n("gamemode_adventure");
+            case "SPECTATOR": return friendService.i18n("gamemode_spectator");
             default: return gameMode;
         }
     }
@@ -151,24 +157,25 @@ public class FriendListGUI implements InventoryHolder {
         
         // Previous page
         if (currentPage > 0) {
-            inventory.setItem(45, createItem(Material.ARROW, ChatColor.GREEN + "上一页"));
+            inventory.setItem(45, createItem(Material.ARROW, i18n("gui_prev_page")));
         }
         
         // Pending requests button
         int requestCount = friendService.getPendingRequests(viewer.getUniqueId()).size();
         if (requestCount > 0) {
             inventory.setItem(47, createItem(Material.WRITABLE_BOOK, 
-                ChatColor.YELLOW + "待处理的好友请求 (" + requestCount + ")",
-                ChatColor.GRAY + "点击查看"));
+                i18n("gui_requests").replace("{COUNT}", String.valueOf(requestCount)),
+                i18n("gui_click_view")));
         }
         
         // Page indicator
         inventory.setItem(49, createItem(Material.BOOK, 
-            ChatColor.YELLOW + "第 " + (currentPage + 1) + " / " + totalPages + " 页"));
+            i18n("gui_page").replace("{PAGE}", String.valueOf(currentPage + 1))
+                .replace("{TOTAL}", String.valueOf(totalPages))));
         
         // Next page
         if (currentPage < totalPages - 1) {
-            inventory.setItem(53, createItem(Material.ARROW, ChatColor.GREEN + "下一页"));
+            inventory.setItem(53, createItem(Material.ARROW, i18n("gui_next_page")));
         }
     }
     

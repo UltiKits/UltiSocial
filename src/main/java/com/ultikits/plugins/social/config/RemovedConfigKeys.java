@@ -7,6 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import com.ultikits.ultitools.abstracts.UltiToolsPlugin;
+
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -27,17 +29,16 @@ import org.bukkit.configuration.file.YamlConfiguration;
 public final class RemovedConfigKeys {
 
     /**
-     * Every key removed from {@code config/social.yml}, mapped to what an operator should be told
-     * about it. Insertion order is the order the warnings are emitted in.
+     * Every key removed from {@code config/social.yml}, mapped to the language-file key of what an
+     * operator should be told about it. Insertion order is the order the warnings are emitted in.
      */
     private static final Map<String, String> REMOVED;
 
     static {
         Map<String, String> removed = new LinkedHashMap<String, String>();
-        removed.put("notifications.friend_join_world",
-                "It never had any effect: this module has no notification for a friend entering "
-                        + "your world, and no other setting replaces it. The notification is recorded "
-                        + "as a feature request, UltiKits/UltiSocial#21 (UltiKits/UltiSocial#15).");
+        removed.put("notifications.friend_join_world", "removed_key_reason_friend_join_world");
+        removed.put("messages.player_blocked", "removed_key_reason_blacklist_message");
+        removed.put("messages.player_unblocked", "removed_key_reason_blacklist_message");
         REMOVED = Collections.unmodifiableMap(removed);
     }
 
@@ -48,7 +49,8 @@ public final class RemovedConfigKeys {
     /**
      * The keys this class knows about, in the order it reports them.
      *
-     * @return an unmodifiable map of removed key path to the guidance printed for it
+     * @return an unmodifiable map of removed key path to the language-file key of the guidance printed
+     *         for it
      */
     public static Map<String, String> removedKeys() {
         return REMOVED;
@@ -64,8 +66,9 @@ public final class RemovedConfigKeys {
      *
      * @param configFile the operator's {@code config/social.yml}; may be {@code null}
      * @param warn       where to send each warning, normally the module logger's warn method
+     * @param plugin     the module, whose language file gives the warning its text
      */
-    public static void warnAboutLeftovers(File configFile, Consumer<String> warn) {
+    public static void warnAboutLeftovers(File configFile, Consumer<String> warn, UltiToolsPlugin plugin) {
         if (configFile == null || !configFile.isFile()) {
             return;
         }
@@ -79,10 +82,13 @@ public final class RemovedConfigKeys {
             if (yaml.contains(entry.getKey())) {
                 // No "[UltiSocial]" prefix: the module logger adds that itself, and the module is
                 // still named in the sentence for any consumer that does not.
-                warn.accept(configFile.getPath() + " still contains '"
-                        + entry.getKey() + "', which this version of UltiSocial no longer reads. "
-                        + entry.getValue()
-                        + " Delete the key from the file to silence this warning.");
+                String reason = "removed_key_reason_friend_join_world".equals(entry.getValue())
+                        ? plugin.i18n("removed_key_reason_friend_join_world")
+                        : plugin.i18n("removed_key_reason_blacklist_message");
+                warn.accept(plugin.i18n("removed_key_warning")
+                        .replace("{FILE}", configFile.getPath())
+                        .replace("{KEY}", entry.getKey())
+                        .replace("{REASON}", reason));
             }
         }
     }

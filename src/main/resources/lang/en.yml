@@ -73,3 +73,56 @@ help_block_title: "&6=== Blacklist Features ==="
 help_block: "&e/friend block <player> &f- Block player"
 help_unblock: "&e/friend unblock <player> &f- Unblock player"
 help_blocklist: "&e/friend blocklist &f- View blacklist"
+
+# Command description (shown by /help)
+command_description: "Friend system"
+
+# /friend list and /friend requests
+list_empty: "&eYou have no friends yet. Use /friend add <player> to add one"
+list_header: "&6=== Friends ({COUNT}) ==="
+status_online: "&a● Online"
+status_offline: "&7○ Offline"
+requests_empty: "&eYou have no pending friend requests"
+requests_header: "&6=== Friend Requests ==="
+requests_entry: "&e- &f{PLAYER} &7(to accept: /friend accept {PLAYER})"
+friend_not_online: "&c{PLAYER} is not online!"
+
+# Private messages
+msg_empty: "&cEnter a message to send! Usage: /friend msg <friend> <message>"
+msg_received: "&f{SENDER} &7→ &fyou: &r"
+msg_sent: "&fyou &7→ &f{RECEIVER}: &r"
+msg_use_command: "&eUse the command to send a private message: &f/friend msg {PLAYER} <message>"
+unblock_failed: "&cCould not unblock that player!"
+
+# Friend list GUI
+gui_world: "&7World: &f{WORLD}"
+gui_mode: "&7Mode: &f{MODE}"
+gui_added_time: "&7Added: &f{TIME}"
+gui_click_remove_offline: "&cRight-click: Remove friend"
+gamemode_survival: "Survival"
+gamemode_creative: "Creative"
+gamemode_adventure: "Adventure"
+gamemode_spectator: "Spectator"
+gui_prev_page: "&aPrevious page"
+gui_next_page: "&aNext page"
+gui_requests: "&ePending friend requests ({COUNT})"
+gui_click_view: "&7Click to view"
+gui_page: "&ePage {PAGE} / {TOTAL}"
+
+# Blacklist GUI
+gui_blocked_time: "&7Blocked: &f{TIME}"
+gui_block_reason: "&7Reason: &f{REASON}"
+gui_unblock_hint: "&7Once unblocked, they can be added as a friend again"
+gui_back: "&eBack to friend list"
+gui_click_back: "&7Click to go back"
+gui_blocked_total: "&7{COUNT} players blocked"
+gui_blocklist_empty: "&aYour blacklist is empty"
+gui_blocklist_empty_hint: "&7You have not blocked anyone"
+
+# Console
+log_friend_update_failed: "Failed to update friend data"
+log_removed_key_check_failed: "Could not check {FILE} for removed configuration keys; the module continues without that check."
+log_config_default_save_failed: "Could not save {FILE} after replacing its old default texts with blanks"
+removed_key_warning: "{FILE} still contains '{KEY}', which this version of UltiSocial no longer reads. {REASON} Delete the key from the file to silence this warning."
+removed_key_reason_friend_join_world: "It never had any effect: this module has no notification for a friend entering your world, and no other setting replaces it. The notification is recorded as a feature request, UltiKits/UltiSocial#21 (UltiKits/UltiSocial#15)."
+removed_key_reason_blacklist_message: "Nothing ever read it: the replies to /friend block and /friend unblock come from this module's language file (lang/en.yml, lang/zh.yml), which is where to change them (UltiKits/UltiSocial#23)."

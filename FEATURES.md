@@ -35,10 +35,8 @@ for UAT execution and issue reconciliation — the public description of these f
   override (grep confirms zero uses of `@CmdMapping(permission=)` in this class), so every
   command row below reads `ultisocial.use` with no suffix.
 - **Source:** `ClassName#member` — the class and member that actually reads or applies the
-  feature — for every Kind, `config` included: 17 of the 19 `config` rows below cite the reading
-  member, not `SocialConfig`'s own field declaration; the other two, `messages.player_blocked` and
-  `messages.player_unblocked`, have no reading member at all and cite the declaring field, saying
-  so in the same cell.
+  feature — for every Kind, `config` included: all 17 `config` rows below cite the reading member,
+  not `SocialConfig`'s own field declaration.
 - **Row order:** by section, then by ID ascending within the section.
 - **No manual prose:** no troubleshooting column, no explanatory paragraphs, no draft page text.
   A hazard noticed while reading becomes a negative checklist row, not a note here. Where a
@@ -46,27 +44,17 @@ for UAT execution and issue reconciliation — the public description of these f
   catalogue implies it does (a dead lang key, a config key with no reader), that fact is stated
   here as a plain, sourced observation, with the filed issue number.
 
-### A module-wide fact that shapes almost every row below: this module barely uses its own i18n catalogue
+### Language
 
-`lang/en.yml`/`lang/zh.yml` each declare 53 keys — an apparently-complete bilingual catalogue
-covering every command, both GUIs, and every notification. **Only 5 of the 53 are ever read**
-(`grep -rhoE 'i18n\("[a-z_]+"\)' src/main/java/ | sort -u`: `already_sent_request`,
-`no_pending_request`, `not_friend`, `request_expired`, `request_not_exist`, all five call sites
-inside `FriendService`). Every other player-facing string in this module is either:
-
-- a hardcoded Simplified Chinese string literal directly in `FriendCommand`, `FriendListGUI`,
-  `BlockListGUI`, or `SocialListener`'s two click handlers (zero `i18n()` calls exist in any of
-  these four files — confirmed by `grep -c "i18n(" <file>` returning 0 for each), which means
-  setting `language: en` has **no effect at all** on these — they render in Chinese regardless
-  of the framework's language setting; or
-- one of `SocialConfig`'s own `@ConfigEntry` string fields (`friendAddedMessage`,
-  `requestSentMessage`, `blockedMessage`, …) — genuinely configurable, but shipped with a
-  Simplified Chinese default, and NOT re-selected by the `language` setting either (an operator
-  who wants English text for these must hand-edit `config/social.yml`).
-
-A known product defect, `UltiKits/UltiSocial#14`, not fixed here per this phase's zero-new-code
-rule. Every row below states explicitly which of these three mechanisms drives its own text, so a
-reader does not have to open the source to learn whether `language: en` matters for that row.
+Every chat line, GUI title, lore line and click tip, and every console line this module writes
+comes from its language file (`lang/en.yml`, `lang/zh.yml`), so it follows the framework's
+`language` setting. The friend-list title and the ten `messages.*` settings of `config/social.yml`
+are operator-editable: a blank value, the default since 6.3.0, shows the language file's text, and
+any other value is shown as written. On upgrade, a value that is exactly the Chinese default an
+earlier version shipped is blanked and the file saved at start-up and on every reload
+(`ultisocial.lifecycle.legacy-text-defaults`), so an operator who never edited them gets the
+language file's text; an edited value is kept. Before 6.3.0 only five of the catalogue's keys were
+read and everything else was fixed Chinese text (`UltiKits/UltiSocial#14`).
 
 ### Reconciliation command family
 
@@ -94,10 +82,10 @@ find <repo-root>/src/main/java -path '*/gui/*' -name '*.java' -not -path '*/targ
 
 **Positive control:** the line-start form returns `@CmdExecutor` = 1, `@CmdMapping` = 13,
 `@EventListener` = 1 (class), `@EventHandler` = 3 (handler methods), `@Scheduled` = 1,
-`@ConditionalOnConfig` = 0, `@ConfigEntity` = 1, `@ConfigEntry` = 19, `@Table` = 2 — confirmed by
-reading `FriendCommand.java` directly (13 `@CmdMapping` sites at lines 49, 55, 73, 89, 94, 99,
-104, 122, 168, 211, 247, 256, 264) and `SocialConfig.java` (19 `@ConfigEntry` sites; 20 before
-`UltiKits/UltiSocial#15` removed `notifications.friend_join_world`). The
+`@ConditionalOnConfig` = 0, `@ConfigEntity` = 1, `@ConfigEntry` = 17, `@Table` = 2 — confirmed by
+reading `FriendCommand.java` directly (13 `@CmdMapping` sites at lines 54, 60, 78, 94, 99, 104, 109, 126, 172, 219, 255, 264, 272) and `SocialConfig.java` (17 `@ConfigEntry` sites; 20 before
+`UltiKits/UltiSocial#15` removed `notifications.friend_join_world`, 19 before
+`UltiKits/UltiSocial#23` removed `messages.player_blocked` and `messages.player_unblocked`). The
 `find`-based GUI-class count above returns 2, matching Phase 9's own independently-derived
 GUI-exclusion register for this module (`FriendListGUI`, `BlockListGUI` — see
 `.planning/phases/09-module-ecosystem-readiness-and-test-coverage/gui-exclusions/UltiSocial.md`).
@@ -120,23 +108,24 @@ command this repository maps.
 ## Friend Management Commands
 
 `FriendCommand` — class-level `@CmdExecutor(alias = {"friend", "friends", "f"}, permission =
-"ultisocial.use", description = <Simplified Chinese "friend system">, FriendCommand.java:35)`, `@CmdTarget(PLAYER)`.
+"ultisocial.use", description = "command_description")` — a language key the framework translates
+("Friend system" under `language: en`) — and `@CmdTarget(PLAYER)`.
 
 | ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
 |---|---|---|---|---|---|---|---|---|
-| ultisocial.friend.accept | Accept a pending friend request by the sender's name, creating a BIDIRECTIONAL friendship (one `FriendshipData` row for each side); refuses if the sender's own friend count is already at `max_friends`. All three of this handler's own outcome messages ("no pending request", "request expired", friend-added) route through i18n/config, not hardcoded text — see the row's own Expected for which mechanism drives which branch | command | `/friend accept <player>` | ultisocial.use | player | player | brief | FriendCommand#acceptRequest, FriendService#acceptRequest |
-| ultisocial.friend.add | Send a friend request to an online player; auto-accepts immediately if the target had already sent a request to the sender (mutual request collapses into an instant friendship, calling `acceptRequest` internally rather than creating a second pending request). The sender-not-online/self-add checks in `FriendCommand` itself are hardcoded Chinese (no `language: en` effect); `FriendService#sendRequest`'s own outcome messages (blocked/already-friends/max-friends/already-sent/sent/received) are a MIX of `SocialConfig` message fields (Chinese-default, configurable, not `language`-driven) and one i18n key (`already_sent_request`, the only one of these five that respects `language: en`) | command | `/friend add <player>` | ultisocial.use | player | player | brief | FriendCommand#addFriend, FriendService#sendRequest |
+| ultisocial.friend.accept | Accept a pending friend request by the sender's name, creating a BIDIRECTIONAL friendship (one `FriendshipData` row for each side); refuses if the sender's own friend count is already at `max_friends`. Its outcome messages come from the language file, the friend-added one through `messages.friend_added` (blank by default) | command | `/friend accept <player>` | ultisocial.use | player | player | brief | FriendCommand#acceptRequest, FriendService#acceptRequest |
+| ultisocial.friend.add | Send a friend request to an online player; auto-accepts immediately if the target had already sent a request to the sender (mutual request collapses into an instant friendship, calling `acceptRequest` internally rather than creating a second pending request). Every reply follows `language`: the not-online and self-add refusals and the already-sent refusal come from the language file, and the blocked, already-friends, max-friends, sent and received messages through their `messages.*` settings (blank by default, so the language file's text) | command | `/friend add <player>` | ultisocial.use | player | player | brief | FriendCommand#addFriend, FriendService#sendRequest |
 | ultisocial.friend.blocklist | Open the blacklist management GUI (`ultisocial.gui.block-list`) for the sender's own blacklist | command | `/friend blocklist` | ultisocial.use | player | player | brief | FriendCommand#openBlockList |
-| ultisocial.friend.block | Add a player (online or a known offline player) to the sender's blacklist; automatically removes any existing friendship with that player (both directions). All chat output in this method is hardcoded Chinese (`FriendCommand` itself never calls `i18n()`) — `language: en` has no effect on this row's text | command | `/friend block <player>` | ultisocial.use | player | player | brief | FriendCommand#blockPlayer, FriendService#addToBlacklist |
-| ultisocial.friend.deny | Deny a pending friend request by the sender's name, removing it from the pending queue without creating a friendship. Outcome messages route through i18n (`no_pending_request`, `request_not_exist`) or `SocialConfig#requestDeniedMessage` (Chinese-default, config-driven) | command | `/friend deny <player>` | ultisocial.use | player | player | brief | FriendCommand#denyRequest, FriendService#denyRequest |
-| ultisocial.friend.help | Print the `/friend` command usage summary, including the blacklist sub-section; entirely hardcoded Chinese chat lines (`FriendCommand#help`/`#handleHelp` never call `i18n()`) despite `lang/en.yml` shipping a complete, unused English translation of every one of these lines (`help_title` through `help_blocklist`) | command | `/friend help` | ultisocial.use | player | player | none | FriendCommand#help |
-| ultisocial.friend.list | List the sender's own friends, sorted favorites-first then alphabetically, each with an online/offline indicator; entirely hardcoded Chinese chat output | command | `/friend list` | ultisocial.use | player | player | brief | FriendCommand#listFriends |
-| ultisocial.friend.msg | Send a private message to an online friend; refuses a non-friend target, an offline target, or an effectively-empty message (whitespace-only after trimming). Entirely hardcoded Chinese chat output on every branch, including the delivered message's own private-message prefix (a bracketed Simplified Chinese label, `FriendCommand.java:201,205`) — `lang/en.yml`'s `msg_only_friend`/`msg_prefix` keys are declared but unused | command | `/friend msg <player> <message...>` | ultisocial.use | player | player | brief | FriendCommand#sendMessage |
+| ultisocial.friend.block | Add a player (online or a known offline player) to the sender's blacklist; automatically removes any existing friendship with that player (both directions). Its replies come from the language file (`player_blocked`, `already_blocked`, `cannot_block_self`, `player_not_exist`); the configuration key `messages.player_blocked`, which nothing ever read, is removed (`UltiKits/UltiSocial#23`) | command | `/friend block <player>` | ultisocial.use | player | player | brief | FriendCommand#blockPlayer, FriendService#addToBlacklist |
+| ultisocial.friend.deny | Deny a pending friend request by the sender's name, removing it from the pending queue without creating a friendship. Outcome messages come from the language file (`no_pending_request`, `request_not_exist`) or `messages.request_denied` (blank by default, so the language file's text) | command | `/friend deny <player>` | ultisocial.use | player | player | brief | FriendCommand#denyRequest, FriendService#denyRequest |
+| ultisocial.friend.help | Print the `/friend` command usage summary, including the blacklist sub-section; fourteen lines from the language file (`help_title` through `help_blocklist`) | command | `/friend help` | ultisocial.use | player | player | none | FriendCommand#help |
+| ultisocial.friend.list | List the sender's own friends, sorted favorites-first then alphabetically, each with an online/offline indicator; every line comes from the language file | command | `/friend list` | ultisocial.use | player | player | brief | FriendCommand#listFriends |
+| ultisocial.friend.msg | Send a private message to an online friend; refuses a non-friend target, an offline target, or an effectively-empty message (whitespace-only after trimming). Every refusal and the private-message prefix (`[PM]` under `language: en`) come from the language file; the message itself is shown exactly as typed | command | `/friend msg <player> <message...>` | ultisocial.use | player | player | brief | FriendCommand#sendMessage |
 | ultisocial.friend.open | Open the paginated friend list GUI (`ultisocial.gui.friend-list`) for the sender's own friends; this is the module's default (bare-argument) command | command | `/friend` (bare, no arguments) | ultisocial.use | player | player | brief | FriendCommand#openFriendList |
-| ultisocial.friend.remove | Remove an existing friendship, removing BOTH sides' `FriendshipData` rows (the sender's own row by ID, and the reverse row via a `WHERE`-matched delete). Outcome messages route through i18n (`not_friend`) or `SocialConfig#friendRemovedMessage` (Chinese-default, config-driven) | command | `/friend remove <player>` | ultisocial.use | player | player | brief | FriendCommand#removeFriend, FriendService#removeFriend |
-| ultisocial.friend.requests | List the sender's own pending (received) friend requests, each with an inline hint naming the exact `/friend accept` command to run; entirely hardcoded Chinese chat output | command | `/friend requests` | ultisocial.use | player | player | brief | FriendCommand#viewRequests |
-| ultisocial.friend.tp | Teleport the sender to an online friend, subject to `tp_to_friend.enabled` and a per-sender cooldown (`tp_to_friend.cooldown`); uses the framework's `TeleportService` if a bean is available, otherwise falls back to `Player#teleport` directly. Entirely hardcoded Chinese chat output on every branch (disabled/not-friend/offline/cooldown/success) — `lang/en.yml`'s `tp_disabled`/`tp_cooldown`/`tp_success`/`player_not_online` keys are declared but unused | command | `/friend tp <player>` | ultisocial.use | player | player | brief | FriendCommand#teleportToFriend, FriendService#canTeleport |
-| ultisocial.friend.unblock | Remove a player from the sender's blacklist by name; entirely hardcoded Chinese chat output on both branches (`lang/en.yml`'s `player_unblocked`/`not_in_blocklist` keys, and `SocialConfig#playerUnblockedMessage`, are all declared but unused — `FriendCommand#unblockPlayer` sends its own hardcoded literal instead of either) | command | `/friend unblock <player>` | ultisocial.use | player | player | brief | FriendCommand#unblockPlayer, FriendService#removeFromBlacklist |
+| ultisocial.friend.remove | Remove an existing friendship, removing BOTH sides' `FriendshipData` rows (the sender's own row by ID, and the reverse row via a `WHERE`-matched delete). Outcome messages come from the language file (`not_friend`) or `messages.friend_removed` (blank by default, so the language file's text) | command | `/friend remove <player>` | ultisocial.use | player | player | brief | FriendCommand#removeFriend, FriendService#removeFriend |
+| ultisocial.friend.requests | List the sender's own pending (received) friend requests, each with an inline hint naming the exact `/friend accept` command to run; every line comes from the language file | command | `/friend requests` | ultisocial.use | player | player | brief | FriendCommand#viewRequests |
+| ultisocial.friend.tp | Teleport the sender to an online friend, subject to `tp_to_friend.enabled` and a per-sender cooldown (`tp_to_friend.cooldown`); uses the framework's `TeleportService` if a bean is available, otherwise falls back to `Player#teleport` directly. Every reply (disabled, not a friend, offline, cooldown, success) comes from the language file | command | `/friend tp <player>` | ultisocial.use | player | player | brief | FriendCommand#teleportToFriend, FriendService#canTeleport |
+| ultisocial.friend.unblock | Remove a player from the sender's blacklist by name; both replies come from the language file (`player_unblocked`, `not_in_blocklist`); the configuration key `messages.player_unblocked`, which nothing ever read, is removed (`UltiKits/UltiSocial#23`) | command | `/friend unblock <player>` | ultisocial.use | player | player | brief | FriendCommand#unblockPlayer, FriendService#removeFromBlacklist |
 
 ## GUI
 
@@ -146,8 +135,8 @@ register for this module.
 
 | ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
 |---|---|---|---|---|---|---|---|---|
-| ultisocial.gui.block-list | Paginated (45-per-page) chest GUI listing the viewer's blacklist, each entry showing the blocked player's skull, block time, and optional reason; left-click unblocks; a Back button (slot 47) returns to `ultisocial.gui.friend-list` (this GUI's OWN Back button, not a route the friend-list offers into this one). An empty-state item (slot 22) appears only when the blacklist is empty. Click routing lives entirely in `SocialListener#onInventoryClick`/`#handleBlockListClick`, not in this class. Every string (title, lore, click tips) is a hardcoded Chinese literal — `lang/en.yml`'s `gui_blocklist`/`gui_click_unblock` keys are declared but unused | gui | `ultisocial.friend.blocklist` (the ONLY way in — `FriendListGUI` has no button of its own that opens this GUI; the Back button described above is the reverse direction) | n/a | n/a | player | brief | BlockListGUI#updateInventory, SocialListener#onInventoryClick, SocialListener#handleBlockListClick |
-| ultisocial.gui.friend-list | Paginated (45-per-page) chest GUI listing the viewer's own friends (favorites first, then alphabetical), each entry a player-head skull showing online/offline status, world and game mode (if online), add time, and per-entry click tips; left-click teleports to an online friend (if enabled and off cooldown), shift+left-click toggles favorite, right-click messages an online friend (prints the exact command to run) or removes an offline one, shift+right-click always removes. A pending-requests button (slot 47) appears only when the viewer has at least one pending request, and opening it runs `/friend requests` via `Player#performCommand`. Click routing lives entirely in `SocialListener#onInventoryClick`/`#handleFriendListClick`, not in this class. The GUI's own title comes from `SocialConfig#guiTitle` (config-driven, Chinese default); every other string (lore, click tips) is hardcoded Chinese — `lang/en.yml`'s `gui_friend_list`/`gui_click_*` keys are declared but unused | gui | `ultisocial.friend.open` | n/a | n/a | player | brief | FriendListGUI#updateInventory, SocialListener#onInventoryClick, SocialListener#handleFriendListClick |
+| ultisocial.gui.block-list | Paginated (45-per-page) chest GUI listing the viewer's blacklist, each entry showing the blocked player's skull, block time, and optional reason; left-click unblocks; a Back button (slot 47) returns to `ultisocial.gui.friend-list` (this GUI's OWN Back button, not a route the friend-list offers into this one). An empty-state item (slot 22) appears only when the blacklist is empty. Click routing lives entirely in `SocialListener#onInventoryClick`/`#handleBlockListClick`, not in this class. Every string (title, lore, click tips, buttons) comes from the language file | gui | `ultisocial.friend.blocklist` (the ONLY way in — `FriendListGUI` has no button of its own that opens this GUI; the Back button described above is the reverse direction) | n/a | n/a | player | brief | BlockListGUI#updateInventory, SocialListener#onInventoryClick, SocialListener#handleBlockListClick |
+| ultisocial.gui.friend-list | Paginated (45-per-page) chest GUI listing the viewer's own friends (favorites first, then alphabetical), each entry a player-head skull showing online/offline status, world and game mode (if online), add time, and per-entry click tips; left-click teleports to an online friend (if enabled and off cooldown), shift+left-click toggles favorite, right-click messages an online friend (prints the exact command to run) or removes an offline one, shift+right-click always removes. A pending-requests button (slot 47) appears only when the viewer has at least one pending request, and opening it runs `/friend requests` via `Player#performCommand`. Click routing lives entirely in `SocialListener#onInventoryClick`/`#handleFriendListClick`, not in this class. The GUI's own title comes from `gui_title` (blank by default, so the language file's `gui_friend_list`); every other string (lore, game-mode names, click tips, buttons) comes from the language file | gui | `ultisocial.friend.open` | n/a | n/a | player | brief | FriendListGUI#updateInventory, SocialListener#onInventoryClick, SocialListener#handleFriendListClick |
 
 ## Player Presence Notifications
 
@@ -157,8 +146,8 @@ third, which is `ultisocial.gui.*`'s own click-routing implementation).
 
 | ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
 |---|---|---|---|---|---|---|---|---|
-| ultisocial.event.friend-offline-notify | Notify every online friend of a quitting player, using `NotificationService` if a bean is available, otherwise a plain chat message; also unconditionally clears the quitting player's friend/blacklist caches regardless of the notification toggle. The notification text is `SocialConfig#friendOfflineMessage` (Chinese-default, config-driven, not `language`-affected) | event | quit the server while at least one online friend is watching, with `notifications.friend_offline: true` | n/a | n/a | internal | brief | SocialListener#onPlayerQuit |
-| ultisocial.event.friend-online-notify | Notify every online friend of a joining player, using `NotificationService` if a bean is available, otherwise a plain chat message. The notification text is `SocialConfig#friendOnlineMessage` (Chinese-default, config-driven, not `language`-affected) | event | join the server while at least one online friend is watching, with `notifications.friend_online: true` | n/a | n/a | internal | brief | SocialListener#onPlayerJoin |
+| ultisocial.event.friend-offline-notify | Notify every online friend of a quitting player, using `NotificationService` if a bean is available, otherwise a plain chat message; also unconditionally clears the quitting player's friend/blacklist caches regardless of the notification toggle. The notification text is `messages.friend_offline` (blank by default, so the language file's text in the server's language) | event | quit the server while at least one online friend is watching, with `notifications.friend_offline: true` | n/a | n/a | internal | brief | SocialListener#onPlayerQuit |
+| ultisocial.event.friend-online-notify | Notify every online friend of a joining player, using `NotificationService` if a bean is available, otherwise a plain chat message. The notification text is `messages.friend_online` (blank by default, so the language file's text in the server's language) | event | join the server while at least one online friend is watching, with `notifications.friend_online: true` | n/a | n/a | internal | brief | SocialListener#onPlayerJoin |
 
 ## Lifecycle Hooks
 
@@ -167,7 +156,8 @@ methods. This module's former overrides of both only logged a literal English li
 called `super`, so they were deleted rather than renamed (`UltiKits/UltiSocial#13`): it has no
 `onUnregister()` hook and prints no reload or unload line of its own. It does have an `onReload()`
 hook, added by `UltiKits/UltiSocial#15`, whose only work is the removed-key check of
-`ultisocial.lifecycle.removed-key-warning` (the same check also runs when the module is enabled).
+`ultisocial.lifecycle.removed-key-warning` and the text-default migration of
+`ultisocial.lifecycle.legacy-text-defaults` (both also run when the module is enabled).
 `ConfigManager#reloadConfigs` re-initialises, in place, the same `SocialConfig` instance the
 container injected into `FriendService`, and `FriendCommand`, `FriendListGUI` and `SocialListener`
 read it through `FriendService#getConfig()` at call time, so `/ul reload UltiSocial` (or bare
@@ -178,7 +168,8 @@ read it through `FriendService#getConfig()` at call time, so `/ul reload UltiSoc
 | ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
 |---|---|---|---|---|---|---|---|---|
 | ultisocial.lifecycle.reload | `/ul reload UltiSocial` re-reads `config/social.yml` into the running module, so an edited `tp_to_friend.enabled` governs the next `/friend tp` without a restart; the framework logs its own `Module 'UltiSocial' reloaded.` line and this module adds no reload work of its own beyond the removed-key check of `ultisocial.lifecycle.removed-key-warning`, which prints a line only while `config/social.yml` still holds a key this version no longer reads. Before `UltiKits/UltiSocial#13` the module's reload override replaced the framework's reload and only logged `UltiSocial configuration reloaded!`, so the reload reported success without reloading anything and an edit took effect only after a restart | event | `/ul reload UltiSocial`, or bare `/ul reload` (framework calls `reloadSelf()`, which reloads configuration, refreshes language, runs the `@ConditionalOnConfig` drift check and logs its own per-module line; this module declares no `/friend reload` subcommand) | n/a | n/a | admin | brief | FriendCommand#teleportToFriend |
-| ultisocial.lifecycle.removed-key-warning | When the module is enabled and again on every reload of it (`/ul reload` or `/ul reload UltiSocial`), read the operator's own `config/social.yml` and, for each key this version no longer reads that is still in it, log one console WARNING naming the file, the key, what became of the setting and that the key can be deleted. The one such key is `notifications.friend_join_world`, removed by UltiKits/UltiSocial#15 (it never had any effect; the notification it described is the feature request UltiKits/UltiSocial#21, and no other setting replaces it); the framework writes a declared default only for a missing key and never deletes one, so every server that ran an earlier version still has it. The line is an English literal from this module, not a language key, so the `language` setting does not change it. A missing or unparseable file produces no warning, and an error inside the check itself is logged as one warning and never stops the module enabling or reloading. The file checked is the one `SocialConfig` binds (its `@ConfigEntity` value), not a second copy of its path | event | module enable (server start, or loading the module) and every reload of it: bare `/ul reload`, which reloads every module, or `/ul reload UltiSocial` | n/a | n/a | admin | brief | UltiSocial#registerSelf, UltiSocial#onReload, RemovedConfigKeys#warnAboutLeftovers |
+| ultisocial.lifecycle.removed-key-warning | When the module is enabled and again on every reload of it (`/ul reload` or `/ul reload UltiSocial`), read the operator's own `config/social.yml` and, for each key this version no longer reads that is still in it, log one console WARNING naming the file, the key, what became of the setting and that the key can be deleted. The keys are `notifications.friend_join_world`, removed by UltiKits/UltiSocial#15 (it never had any effect; the notification it described is the feature request UltiKits/UltiSocial#21, and no other setting replaces it), and `messages.player_blocked` and `messages.player_unblocked`, removed by UltiKits/UltiSocial#23 (nothing ever read them; the block and unblock replies come from the language file); the framework writes a declared default only for a missing key and never deletes one, so every server that ran an earlier version still has them. The line comes from the language file, so it follows the `language` setting. A missing or unparseable file produces no warning, and an error inside the check itself is logged as one warning and never stops the module enabling or reloading. The file checked is the one `SocialConfig` binds (its `@ConfigEntity` value), not a second copy of its path | event | module enable (server start, or loading the module) and every reload of it: bare `/ul reload`, which reloads every module, or `/ul reload UltiSocial` | n/a | n/a | admin | brief | UltiSocial#registerSelf, UltiSocial#onReload, RemovedConfigKeys#warnAboutLeftovers |
+| ultisocial.lifecycle.legacy-text-defaults | When the module is enabled and again on every reload of it, after the framework has read `config/social.yml`: each of `gui_title` and the ten `messages.*` values that is exactly the Chinese default an earlier version shipped is replaced with a blank value and the file is saved, so those texts come from the language file in the server's language; a value that differs in any way (an operator's edit) is kept, and a blank value is never rewritten again, so the file is saved only when something changed | event | module enable and every reload of it | n/a | n/a | admin | brief | UltiSocial#registerSelf, UltiSocial#onReload, SocialConfig#migrateLegacyDefaults |
 
 ## Scheduled Tasks
 
@@ -203,24 +194,19 @@ blocked them; only the blocker's own list ever shows the relationship.
 
 ## Configuration
 
-Every `@ConfigEntry`-annotated field on this module's one `@ConfigEntity` class (19 keys total,
-matching the reconciliation table's own `@ConfigEntry` count of 19 exactly). This module ships NO
+Every `@ConfigEntry`-annotated field on this module's one `@ConfigEntity` class (17 keys total,
+matching the reconciliation table's own `@ConfigEntry` count of 17 exactly). This module ships NO
 `config/social.yml` resource under `src/main/resources` — the file is generated entirely from
-these `@ConfigEntry` field defaults the first time the module boots.
+these `@ConfigEntry` field defaults the first time the module boots. The title and the ten
+messages are written blank: a blank value shows the language file's text in the server's language
+(see Conventions, Language).
 
-**Two keys are declared but have no reader anywhere in production code** — a distinct defect
-from the language-catalogue one above, since these are genuinely configurable fields with no
-consumer at all, not fixed text:
+Two keys, `messages.player_blocked` and `messages.player_unblocked`, were declared but never read:
+the block and unblock replies were fixed text, and now come from the language file. They are
+removed (`UltiKits/UltiSocial#23`); an operator's file that still holds them gets a warning
+(`ultisocial.lifecycle.removed-key-warning`).
 
-- `messages.player_blocked` / `messages.player_unblocked` — `FriendCommand#blockPlayer`/
-  `#unblockPlayer` send their own hardcoded Chinese literals instead of reading
-  `SocialConfig#getPlayerBlockedMessage()`/`#getPlayerUnblockedMessage()`; grep confirms zero
-  call sites for either getter, and the matching `player_blocked` / `player_unblocked` language keys
-  are not read either, so neither text mechanism is live for this pair. Tracked in
-  `UltiKits/UltiSocial#23`, to be decided in wave 3 together with `UltiKits/UltiSocial#14` (which
-  decides where message text lives).
-
-A third, `notifications.friend_join_world`, declared a "notify when a friend joins your world"
+Another, `notifications.friend_join_world`, declared a "notify when a friend joins your world"
 feature that was never implemented (no handler for a player changing worlds existed anywhere in
 this module). It is removed as of `UltiKits/UltiSocial#15` rather than built — the feature is
 recorded as a request in `UltiKits/UltiSocial#21`; removing the setting does not reject it. A fresh
@@ -229,20 +215,18 @@ deletes a key from an operator's file.
 
 | ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
 |---|---|---|---|---|---|---|---|---|
-| ultisocial.config.social.gui_title | The friend list GUI's own title template, `{COUNT}`/`{MAX}` placeholders | config | `config/social.yml: gui_title (default: a Simplified Chinese "friend list" title plus the `{COUNT}`/`{MAX}` placeholders, `SocialConfig.java:46`)` | n/a | n/a | admin | brief | FriendListGUI#FriendListGUI |
+| ultisocial.config.social.gui_title | The friend list GUI's own title template, `{COUNT}`/`{MAX}` placeholders | config | `config/social.yml: gui_title (default: blank — the language file's gui_title, under language: en "&6Friend List &7({COUNT}/{MAX})"; any other value is shown as written)` | n/a | n/a | admin | brief | FriendListGUI#FriendListGUI |
 | ultisocial.config.social.max_friends | Maximum number of friends per player (range 1-500, enforced by `@Range`); enforced both when sending a request and when accepting one | config | `config/social.yml: max_friends (default: 50)` | n/a | n/a | admin | brief | FriendService#sendRequest, FriendService#acceptRequest |
-| ultisocial.config.social.messages.already_friends | Message shown when the sender tries to friend-request someone already on their friends list | config | `config/social.yml: messages.already_friends (default: a Simplified Chinese "you are already friends with {PLAYER}" sentence, `SocialConfig.java:82`)` | n/a | n/a | admin | brief | FriendService#sendRequest |
-| ultisocial.config.social.messages.blocked | Message shown when a friend-request attempt is refused because either party has blocked the other (bidirectional check) | config | `config/social.yml: messages.blocked (default: a Simplified Chinese "cannot perform this action with {PLAYER} due to a blacklist relationship" sentence, `SocialConfig.java:86`)` | n/a | n/a | admin | brief | FriendService#sendRequest |
-| ultisocial.config.social.messages.friend_added | Message shown to BOTH players when a friend request is accepted | config | `config/social.yml: messages.friend_added (default: a Simplified Chinese "you and {PLAYER} are now friends" sentence, `SocialConfig.java:50`)` | n/a | n/a | admin | brief | FriendService#acceptRequest |
-| ultisocial.config.social.messages.friend_offline | Notification sent to online friends when a player disconnects | config | `config/social.yml: messages.friend_offline (default: a Simplified Chinese "your friend {PLAYER} has gone offline" sentence, `SocialConfig.java:62`)` | n/a | n/a | admin | brief | SocialListener#onPlayerQuit |
-| ultisocial.config.social.messages.friend_online | Notification sent to online friends when a player joins | config | `config/social.yml: messages.friend_online (default: a Simplified Chinese "your friend {PLAYER} is now online" sentence, `SocialConfig.java:58`)` | n/a | n/a | admin | brief | SocialListener#onPlayerJoin |
-| ultisocial.config.social.messages.friend_removed | Message shown to the player who removed a friend (the other side receives no message) | config | `config/social.yml: messages.friend_removed (default: a Simplified Chinese "you have removed friend {PLAYER}" sentence, `SocialConfig.java:54`)` | n/a | n/a | admin | brief | FriendService#removeFriend |
-| ultisocial.config.social.messages.max_friends_reached | Message shown when a friend-request send or accept would exceed `max_friends` | config | `config/social.yml: messages.max_friends_reached (default: a Simplified Chinese "your friend count has reached the limit" sentence, `SocialConfig.java:78`)` | n/a | n/a | admin | brief | FriendService#sendRequest, FriendService#acceptRequest |
-| ultisocial.config.social.messages.player_blocked | Declared as the message shown when a player is added to the blacklist; never read — `FriendCommand#blockPlayer` sends its own hardcoded Chinese literal instead. Known product defect, `UltiKits/UltiSocial#23` | config | `config/social.yml: messages.player_blocked (default: a Simplified Chinese "{PLAYER} added to blacklist" sentence, `SocialConfig.java:90`, has no effect)` | n/a | n/a | admin | brief | SocialConfig#playerBlockedMessage (declared, never read outside this class) |
-| ultisocial.config.social.messages.player_unblocked | Declared as the message shown when a player is removed from the blacklist; never read — `FriendCommand#unblockPlayer` sends its own hardcoded Chinese literal instead. Known product defect, `UltiKits/UltiSocial#23` | config | `config/social.yml: messages.player_unblocked (default: a Simplified Chinese "{PLAYER} removed from blacklist" sentence, `SocialConfig.java:94`, has no effect)` | n/a | n/a | admin | brief | SocialConfig#playerUnblockedMessage (declared, never read outside this class) |
-| ultisocial.config.social.messages.request_denied | Message shown to the DENYING player (the one who ran `/friend deny`, i.e. the original request's receiver) confirming the denial went through — NOT sent to the original sender, who receives no notification of the denial at all | config | `config/social.yml: messages.request_denied (default: a Simplified Chinese "denied {PLAYER}'s friend request" sentence, `SocialConfig.java:74`)` | n/a | n/a | admin | brief | FriendService#denyRequest |
-| ultisocial.config.social.messages.request_received | Message shown to the receiver when a friend request arrives | config | `config/social.yml: messages.request_received (default: a Simplified Chinese "{PLAYER} wants to be your friend, type /friend accept {PLAYER} to accept" sentence, `SocialConfig.java:70`)` | n/a | n/a | admin | brief | FriendService#sendRequest |
-| ultisocial.config.social.messages.request_sent | Message shown to the sender when a friend request is successfully queued | config | `config/social.yml: messages.request_sent (default: a Simplified Chinese "friend request sent to {PLAYER}" sentence, `SocialConfig.java:66`)` | n/a | n/a | admin | brief | FriendService#sendRequest |
+| ultisocial.config.social.messages.already_friends | Message shown when the sender tries to friend-request someone already on their friends list | config | `config/social.yml: messages.already_friends (default: blank — the language file's already_friends, under language: en "&cYou are already friends with {PLAYER}!"; any other value is shown as written)` | n/a | n/a | admin | brief | FriendService#sendRequest |
+| ultisocial.config.social.messages.blocked | Message shown when a friend-request attempt is refused because either party has blocked the other (bidirectional check) | config | `config/social.yml: messages.blocked (default: blank — the language file's blocked, under language: en "&cCannot perform friend operations with {PLAYER} due to blacklist"; any other value is shown as written)` | n/a | n/a | admin | brief | FriendService#sendRequest |
+| ultisocial.config.social.messages.friend_added | Message shown to BOTH players when a friend request is accepted | config | `config/social.yml: messages.friend_added (default: blank — the language file's friend_added, under language: en "&aYou and {PLAYER} are now friends!"; any other value is shown as written)` | n/a | n/a | admin | brief | FriendService#acceptRequest |
+| ultisocial.config.social.messages.friend_offline | Notification sent to online friends when a player disconnects | config | `config/social.yml: messages.friend_offline (default: blank — the language file's friend_offline, under language: en "&7Your friend {PLAYER} has gone offline"; any other value is shown as written)` | n/a | n/a | admin | brief | SocialListener#onPlayerQuit |
+| ultisocial.config.social.messages.friend_online | Notification sent to online friends when a player joins | config | `config/social.yml: messages.friend_online (default: blank — the language file's friend_online, under language: en "&aYour friend {PLAYER} is now online!"; any other value is shown as written)` | n/a | n/a | admin | brief | SocialListener#onPlayerJoin |
+| ultisocial.config.social.messages.friend_removed | Message shown to the player who removed a friend (the other side receives no message) | config | `config/social.yml: messages.friend_removed (default: blank — the language file's friend_removed, under language: en "&cYou have removed {PLAYER} from your friends"; any other value is shown as written)` | n/a | n/a | admin | brief | FriendService#removeFriend |
+| ultisocial.config.social.messages.max_friends_reached | Message shown when a friend-request send or accept would exceed `max_friends` | config | `config/social.yml: messages.max_friends_reached (default: blank — the language file's max_friends_reached, under language: en "&cYou have reached the maximum number of friends!"; any other value is shown as written)` | n/a | n/a | admin | brief | FriendService#sendRequest, FriendService#acceptRequest |
+| ultisocial.config.social.messages.request_denied | Message shown to the DENYING player (the one who ran `/friend deny`, i.e. the original request's receiver) confirming the denial went through — NOT sent to the original sender, who receives no notification of the denial at all | config | `config/social.yml: messages.request_denied (default: blank — the language file's request_denied, under language: en "&cYou denied {PLAYER}'s friend request"; any other value is shown as written)` | n/a | n/a | admin | brief | FriendService#denyRequest |
+| ultisocial.config.social.messages.request_received | Message shown to the receiver when a friend request arrives | config | `config/social.yml: messages.request_received (default: blank — the language file's request_received, under language: en "&e{PLAYER} wants to be your friend! Type /friend accept {PLAYER} to accept"; any other value is shown as written)` | n/a | n/a | admin | brief | FriendService#sendRequest |
+| ultisocial.config.social.messages.request_sent | Message shown to the sender when a friend request is successfully queued | config | `config/social.yml: messages.request_sent (default: blank — the language file's request_sent, under language: en "&aFriend request sent to {PLAYER}!"; any other value is shown as written)` | n/a | n/a | admin | brief | FriendService#sendRequest |
 | ultisocial.config.social.notifications.friend_offline | Enable the friend-offline chat/notification-service message | config | `config/social.yml: notifications.friend_offline (default: true)` | n/a | n/a | admin | brief | SocialListener#onPlayerQuit |
 | ultisocial.config.social.notifications.friend_online | Enable the friend-online chat/notification-service message | config | `config/social.yml: notifications.friend_online (default: true)` | n/a | n/a | admin | brief | SocialListener#onPlayerJoin |
 | ultisocial.config.social.request_timeout | Friend request expiry, in seconds (range 10-3600, enforced by `@Range`); checked by the 1-minute scheduled sweep, inline on `/friend accept` (a request past this age is treated as `request_expired` even if the sweep has not yet removed it), and inline on `/friend requests`/`getPendingRequests` (an expired request is filtered out of the view before it is shown) — NOT checked by `/friend deny`, which removes a request by sender name unconditionally whether or not it has expired | config | `config/social.yml: request_timeout (default: 60)` | n/a | n/a | admin | brief | FriendService#cleanupExpiredRequests, FriendService#acceptRequest, FriendService#getPendingRequests, FriendRequest#isExpired |
@@ -255,3 +239,13 @@ The line-start form of the canonical command reports exactly 0 `@ConditionalOnCo
 this repository — every bean this module registers (`FriendCommand`, `FriendService`,
 `SocialListener`) is unconditional at component-scan time. This is the 0-against-0 line the
 reconciliation table states rather than omits.
+
+## Language
+
+Two JUnit guards (`UltiSocialLanguageCatalogueTest`, `UltiSocialCjkLiteralScopeTest`) fail the build
+when a key is missing from either catalogue, a catalogue key is read by nothing, or Chinese text
+appears outside one.
+
+| ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
+|---|---|---|---|---|---|---|---|---|
+| ultisocial.i18n.language | All of this module's chat, GUI, command-description and console text in the server's language: `lang/en.yml` under `language: en`, `lang/zh.yml` under `language: zh` | config | framework `config.yml: language` | n/a | both | admin | none | `lang/en.yml`, `lang/zh.yml`, every `i18n(...)` call |

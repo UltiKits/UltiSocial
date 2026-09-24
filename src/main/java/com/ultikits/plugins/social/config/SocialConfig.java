@@ -3,7 +3,6 @@ package com.ultikits.plugins.social.config;
 import com.ultikits.ultitools.abstracts.AbstractConfigEntity;
 import com.ultikits.ultitools.annotations.ConfigEntity;
 import com.ultikits.ultitools.annotations.ConfigEntry;
-import com.ultikits.ultitools.annotations.config.NotEmpty;
 import com.ultikits.ultitools.annotations.config.Range;
 
 import lombok.Getter;
@@ -41,57 +40,118 @@ public class SocialConfig extends AbstractConfigEntity {
     @ConfigEntry(path = "tp_to_friend.cooldown", comment = "Teleport cooldown in seconds")
     private int tpCooldown = 30;
     
-    @NotEmpty
-    @ConfigEntry(path = "gui_title", comment = "Friend list GUI title")
-    private String guiTitle = "&6好友列表 &7({COUNT}/{MAX})";
+    // The friend-list title and the messages below are blank by default: a blank value shows the
+    // language file's text in the server's language, resolved when it is shown (maintainer ruling
+    // 2026-09-24 (d)). Any other value is the operator's and is shown as written.
 
-    @NotEmpty
-    @ConfigEntry(path = "messages.friend_added", comment = "Friend added message")
-    private String friendAddedMessage = "&a你和 {PLAYER} 成为了好友！";
+    @ConfigEntry(path = "gui_title", comment = "Friend list GUI title (blank: the language file's text)")
+    private String guiTitle = "";
 
-    @NotEmpty
-    @ConfigEntry(path = "messages.friend_removed", comment = "Friend removed message")
-    private String friendRemovedMessage = "&c你已删除好友 {PLAYER}";
+    @ConfigEntry(path = "messages.friend_added", comment = "Friend added message (blank: the language file's text)")
+    private String friendAddedMessage = "";
 
-    @NotEmpty
-    @ConfigEntry(path = "messages.friend_online", comment = "Friend online notification")
-    private String friendOnlineMessage = "&a你的好友 {PLAYER} 上线了！";
+    @ConfigEntry(path = "messages.friend_removed", comment = "Friend removed message (blank: the language file's text)")
+    private String friendRemovedMessage = "";
 
-    @NotEmpty
-    @ConfigEntry(path = "messages.friend_offline", comment = "Friend offline notification")
-    private String friendOfflineMessage = "&7你的好友 {PLAYER} 下线了";
+    @ConfigEntry(path = "messages.friend_online", comment = "Friend online notification (blank: the language file's text)")
+    private String friendOnlineMessage = "";
 
-    @NotEmpty
-    @ConfigEntry(path = "messages.request_sent", comment = "Request sent message")
-    private String requestSentMessage = "&a已向 {PLAYER} 发送好友请求！";
+    @ConfigEntry(path = "messages.friend_offline", comment = "Friend offline notification (blank: the language file's text)")
+    private String friendOfflineMessage = "";
 
-    @NotEmpty
-    @ConfigEntry(path = "messages.request_received", comment = "Request received message")
-    private String requestReceivedMessage = "&e{PLAYER} 想和你成为好友！输入 /friend accept {PLAYER} 接受";
+    @ConfigEntry(path = "messages.request_sent", comment = "Request sent message (blank: the language file's text)")
+    private String requestSentMessage = "";
 
-    @NotEmpty
-    @ConfigEntry(path = "messages.request_denied", comment = "Request denied message")
-    private String requestDeniedMessage = "&c已拒绝 {PLAYER} 的好友请求";
+    @ConfigEntry(path = "messages.request_received", comment = "Request received message (blank: the language file's text)")
+    private String requestReceivedMessage = "";
 
-    @NotEmpty
-    @ConfigEntry(path = "messages.max_friends_reached", comment = "Max friends reached message")
-    private String maxFriendsMessage = "&c你的好友数量已达上限！";
+    @ConfigEntry(path = "messages.request_denied", comment = "Request denied message (blank: the language file's text)")
+    private String requestDeniedMessage = "";
 
-    @NotEmpty
-    @ConfigEntry(path = "messages.already_friends", comment = "Already friends message")
-    private String alreadyFriendsMessage = "&c你已经和 {PLAYER} 是好友了！";
+    @ConfigEntry(path = "messages.max_friends_reached", comment = "Max friends reached message (blank: the language file's text)")
+    private String maxFriendsMessage = "";
 
-    @NotEmpty
-    @ConfigEntry(path = "messages.blocked", comment = "Blocked player message (bidirectional)")
-    private String blockedMessage = "&c无法与 {PLAYER} 进行好友操作，因为存在黑名单关系";
+    @ConfigEntry(path = "messages.already_friends", comment = "Already friends message (blank: the language file's text)")
+    private String alreadyFriendsMessage = "";
 
-    @NotEmpty
-    @ConfigEntry(path = "messages.player_blocked", comment = "Player added to blacklist message")
-    private String playerBlockedMessage = "&c已将 {PLAYER} 加入黑名单";
+    @ConfigEntry(path = "messages.blocked", comment = "Blocked player message (bidirectional) (blank: the language file's text)")
+    private String blockedMessage = "";
 
-    @NotEmpty
-    @ConfigEntry(path = "messages.player_unblocked", comment = "Player removed from blacklist message")
-    private String playerUnblockedMessage = "&a已将 {PLAYER} 从黑名单移除";
+    /**
+     * The default each text setting had in every earlier version, read from this class's history (one
+     * value per setting, from the first release until the language file took over). Kept only to be
+     * recognised in an upgraded operator's file and blanked; never shown.
+     */
+    private static final String[][] SHIPPED_DEFAULTS = {
+        {"guiTitle", "&6好友列表 &7({COUNT}/{MAX})"},
+        {"friendAddedMessage", "&a你和 {PLAYER} 成为了好友！"},
+        {"friendRemovedMessage", "&c你已删除好友 {PLAYER}"},
+        {"friendOnlineMessage", "&a你的好友 {PLAYER} 上线了！"},
+        {"friendOfflineMessage", "&7你的好友 {PLAYER} 下线了"},
+        {"requestSentMessage", "&a已向 {PLAYER} 发送好友请求！"},
+        {"requestReceivedMessage", "&e{PLAYER} 想和你成为好友！输入 /friend accept {PLAYER} 接受"},
+        {"requestDeniedMessage", "&c已拒绝 {PLAYER} 的好友请求"},
+        {"maxFriendsMessage", "&c你的好友数量已达上限！"},
+        {"alreadyFriendsMessage", "&c你已经和 {PLAYER} 是好友了！"},
+        {"blockedMessage", "&c无法与 {PLAYER} 进行好友操作，因为存在黑名单关系"}
+    };
+
+    /**
+     * Blanks every text setting that is exactly the default an earlier version shipped, so the
+     * language file's text takes over in the server's language; any other value is the operator's and
+     * is kept. Idempotent: a blank value matches no shipped default. The caller saves the file when
+     * this returns true (maintainer ruling 2026-09-24 (d)).
+     *
+     * @return whether any value was rewritten
+     */
+    public boolean migrateLegacyDefaults() {
+        boolean changed = false;
+        if (SHIPPED_DEFAULTS[0][1].equals(guiTitle)) {
+            guiTitle = "";
+            changed = true;
+        }
+        if (SHIPPED_DEFAULTS[1][1].equals(friendAddedMessage)) {
+            friendAddedMessage = "";
+            changed = true;
+        }
+        if (SHIPPED_DEFAULTS[2][1].equals(friendRemovedMessage)) {
+            friendRemovedMessage = "";
+            changed = true;
+        }
+        if (SHIPPED_DEFAULTS[3][1].equals(friendOnlineMessage)) {
+            friendOnlineMessage = "";
+            changed = true;
+        }
+        if (SHIPPED_DEFAULTS[4][1].equals(friendOfflineMessage)) {
+            friendOfflineMessage = "";
+            changed = true;
+        }
+        if (SHIPPED_DEFAULTS[5][1].equals(requestSentMessage)) {
+            requestSentMessage = "";
+            changed = true;
+        }
+        if (SHIPPED_DEFAULTS[6][1].equals(requestReceivedMessage)) {
+            requestReceivedMessage = "";
+            changed = true;
+        }
+        if (SHIPPED_DEFAULTS[7][1].equals(requestDeniedMessage)) {
+            requestDeniedMessage = "";
+            changed = true;
+        }
+        if (SHIPPED_DEFAULTS[8][1].equals(maxFriendsMessage)) {
+            maxFriendsMessage = "";
+            changed = true;
+        }
+        if (SHIPPED_DEFAULTS[9][1].equals(alreadyFriendsMessage)) {
+            alreadyFriendsMessage = "";
+            changed = true;
+        }
+        if (SHIPPED_DEFAULTS[10][1].equals(blockedMessage)) {
+            blockedMessage = "";
+            changed = true;
+        }
+        return changed;
+    }
 
     public SocialConfig(String configFilePath) {
         super(configFilePath);
