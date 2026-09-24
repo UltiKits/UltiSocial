@@ -1,5 +1,6 @@
 package com.ultikits.plugins.social.listener;
 
+import com.ultikits.plugins.social.i18n.SocialSeams;
 import com.ultikits.plugins.social.UltiSocialTestHelper;
 import com.ultikits.plugins.social.config.SocialConfig;
 import com.ultikits.plugins.social.entity.BlacklistData;
@@ -53,6 +54,8 @@ class SocialListenerTest {
         UltiSocialTestHelper.setUp();
 
         friendService = mock(FriendService.class);
+
+        SocialSeams.speak(friendService, "zh");
         notificationService = mock(NotificationService.class);
         teleportService = mock(TeleportService.class);
         config = UltiSocialTestHelper.createDefaultConfig();

@@ -1,5 +1,6 @@
 package com.ultikits.plugins.social;
 
+import com.ultikits.plugins.social.i18n.CatalogueText;
 import com.ultikits.plugins.social.config.SocialConfig;
 import com.ultikits.ultitools.annotations.ConfigEntity;
 import com.ultikits.ultitools.interfaces.impl.logger.PluginLogger;
@@ -17,6 +18,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -27,6 +29,7 @@ class UltiSocialTest {
     @DisplayName("registerSelf should return true")
     void registerSelf() throws Exception {
         UltiSocial plugin = mock(UltiSocial.class);
+        lenient().when(plugin.i18n(anyString())).thenAnswer(CatalogueText.answer("en"));
         PluginLogger logger = mock(PluginLogger.class);
         when(plugin.getLogger()).thenReturn(logger);
         when(plugin.registerSelf()).thenCallRealMethod();
@@ -61,6 +64,7 @@ class UltiSocialTest {
     @DisplayName("supported should return zh and en")
     void supported() throws Exception {
         UltiSocial plugin = mock(UltiSocial.class);
+        lenient().when(plugin.i18n(anyString())).thenAnswer(CatalogueText.answer("en"));
         when(plugin.supported()).thenCallRealMethod();
 
         List<String> langs = plugin.supported();
@@ -120,6 +124,8 @@ class UltiSocialTest {
             Files.write(file.toPath(), body.getBytes(StandardCharsets.UTF_8));
 
             UltiSocial plugin = mock(UltiSocial.class);
+
+            lenient().when(plugin.i18n(anyString())).thenAnswer(CatalogueText.answer("en"));
             logger = mock(PluginLogger.class);
             when(plugin.getLogger()).thenReturn(logger);
             when(plugin.operatorConfigFile()).thenReturn(file);
@@ -181,6 +187,7 @@ class UltiSocialTest {
             // key. The framework constructs SocialConfig with its @ConfigEntity value, so that value
             // is the path the check must use.
             UltiSocial plugin = mock(UltiSocial.class);
+            lenient().when(plugin.i18n(anyString())).thenAnswer(CatalogueText.answer("en"));
             when(plugin.operatorConfigPath()).thenCallRealMethod();
 
             String declared = SocialConfig.class.getAnnotation(ConfigEntity.class).value();
@@ -195,6 +202,7 @@ class UltiSocialTest {
             // The check is advisory. Simulated with the file lookup itself failing: the module must
             // still enable and reload, and the failure is reported once per entry point.
             UltiSocial plugin = mock(UltiSocial.class);
+            lenient().when(plugin.i18n(anyString())).thenAnswer(CatalogueText.answer("en"));
             logger = mock(PluginLogger.class);
             when(plugin.getLogger()).thenReturn(logger);
             when(plugin.operatorConfigFile())

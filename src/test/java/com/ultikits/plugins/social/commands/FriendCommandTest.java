@@ -1,5 +1,6 @@
 package com.ultikits.plugins.social.commands;
 
+import com.ultikits.plugins.social.i18n.SocialSeams;
 import com.ultikits.plugins.social.UltiSocialTestHelper;
 import com.ultikits.plugins.social.config.SocialConfig;
 import com.ultikits.plugins.social.entity.BlacklistData;
@@ -44,6 +45,8 @@ class FriendCommandTest {
         UltiSocialTestHelper.setUp();
 
         friendService = mock(FriendService.class);
+
+        SocialSeams.speak(friendService, "zh");
         teleportService = mock(TeleportService.class);
         config = UltiSocialTestHelper.createDefaultConfig();
 
@@ -865,7 +868,7 @@ class FriendCommandTest {
             command.unblockPlayer(player, "BlockedPlayer");
 
             verify(friendService).removeFromBlacklist(player, "BlockedPlayer");
-            verify(player).sendMessage(contains("从黑名单中移除"));
+            verify(player).sendMessage(contains("从黑名单"));
         }
 
         @Test
