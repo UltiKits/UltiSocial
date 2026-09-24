@@ -37,7 +37,9 @@ class UltiSocialTest {
         boolean result = plugin.registerSelf();
 
         assertThat(result).isTrue();
-        verify(logger).info("UltiSocial v1.1.0 has been enabled!");
+        // The enable line comes from the language file; the hard-coded one named a version (v1.1.0)
+        // this module never had (its pom says 1.0.0).
+        verify(logger).info(CatalogueText.text("en", "social_enabled"));
     }
 
     /**

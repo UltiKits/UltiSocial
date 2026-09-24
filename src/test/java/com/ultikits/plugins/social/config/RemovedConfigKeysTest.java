@@ -117,6 +117,20 @@ class RemovedConfigKeysTest {
     }
 
     @Test
+    @DisplayName("the two unread blacklist messages are reported when still in the file (UltiKits/UltiSocial#23)")
+    void reportsTheUnreadBlacklistMessages(@TempDir File dir) throws IOException {
+        List<String> warnings = new ArrayList<String>();
+        File file = write(dir, "messages:\n  player_blocked: '&cBlocked {PLAYER}'\n  player_unblocked: 'x'\n");
+
+        SocialSeams.warnAboutLeftovers(file, warnings::add, ENGLISH);
+
+        assertThat(warnings).hasSize(2);
+        assertThat(warnings.get(0)).contains("'messages.player_blocked'").contains(file.getPath())
+                .contains("UltiKits/UltiSocial#23").contains("language file");
+        assertThat(warnings.get(1)).contains("'messages.player_unblocked'").contains("UltiKits/UltiSocial#23");
+    }
+
+    @Test
     @DisplayName("no warning, and no exception, for a missing file, no file at all, or a file that is not YAML")
     void silentWithoutAReadableFile(@TempDir File dir) throws IOException {
         List<String> warnings = new ArrayList<String>();
@@ -146,7 +160,8 @@ class RemovedConfigKeysTest {
         assertThat(declared).as("control: the scan sees SocialConfig's keys")
                 .contains("notifications.friend_online", "notifications.friend_offline");
         assertThat(RemovedConfigKeys.removedKeys().keySet())
-                .containsExactly("notifications.friend_join_world")
+                .containsExactly("notifications.friend_join_world", "messages.player_blocked",
+                        "messages.player_unblocked")
                 .doesNotContainAnyElementsOf(declared);
     }
 }

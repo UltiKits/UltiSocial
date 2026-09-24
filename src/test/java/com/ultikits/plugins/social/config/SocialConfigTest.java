@@ -1,5 +1,6 @@
 package com.ultikits.plugins.social.config;
 
+import com.ultikits.plugins.social.i18n.CatalogueText;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.*;
@@ -55,95 +56,105 @@ class SocialConfigTest {
         }
 
         @Test
-        @DisplayName("Should have default GUI title")
+        @DisplayName("GuiTitle is blank by default; the language file gives its text")
         void guiTitle() {
             SocialConfig config = createRealConfig();
-            assertThat(config.getGuiTitle()).isEqualTo("&6好友列表 &7({COUNT}/{MAX})");
+            assertThat(config.getGuiTitle()).isEmpty();
+            assertThat(CatalogueText.text("en", "gui_friend_list")).contains("{COUNT}", "{MAX}");
+            assertThat(CatalogueText.text("zh", "gui_friend_list")).contains("{COUNT}", "{MAX}");
         }
 
         @Test
-        @DisplayName("Should have default friend added message")
+        @DisplayName("FriendAddedMessage is blank by default; the language file gives its text")
         void friendAddedMessage() {
             SocialConfig config = createRealConfig();
-            assertThat(config.getFriendAddedMessage()).isEqualTo("&a你和 {PLAYER} 成为了好友！");
+            assertThat(config.getFriendAddedMessage()).isEmpty();
+            assertThat(CatalogueText.text("en", "friend_added")).contains("{PLAYER}");
+            assertThat(CatalogueText.text("zh", "friend_added")).contains("{PLAYER}");
         }
 
         @Test
-        @DisplayName("Should have default friend removed message")
+        @DisplayName("FriendRemovedMessage is blank by default; the language file gives its text")
         void friendRemovedMessage() {
             SocialConfig config = createRealConfig();
-            assertThat(config.getFriendRemovedMessage()).isEqualTo("&c你已删除好友 {PLAYER}");
+            assertThat(config.getFriendRemovedMessage()).isEmpty();
+            assertThat(CatalogueText.text("en", "friend_removed")).contains("{PLAYER}");
+            assertThat(CatalogueText.text("zh", "friend_removed")).contains("{PLAYER}");
         }
 
         @Test
-        @DisplayName("Should have default friend online message")
+        @DisplayName("FriendOnlineMessage is blank by default; the language file gives its text")
         void friendOnlineMessage() {
             SocialConfig config = createRealConfig();
-            assertThat(config.getFriendOnlineMessage()).isEqualTo("&a你的好友 {PLAYER} 上线了！");
+            assertThat(config.getFriendOnlineMessage()).isEmpty();
+            assertThat(CatalogueText.text("en", "friend_online")).contains("{PLAYER}");
+            assertThat(CatalogueText.text("zh", "friend_online")).contains("{PLAYER}");
         }
 
         @Test
-        @DisplayName("Should have default friend offline message")
+        @DisplayName("FriendOfflineMessage is blank by default; the language file gives its text")
         void friendOfflineMessage() {
             SocialConfig config = createRealConfig();
-            assertThat(config.getFriendOfflineMessage()).isEqualTo("&7你的好友 {PLAYER} 下线了");
+            assertThat(config.getFriendOfflineMessage()).isEmpty();
+            assertThat(CatalogueText.text("en", "friend_offline")).contains("{PLAYER}");
+            assertThat(CatalogueText.text("zh", "friend_offline")).contains("{PLAYER}");
         }
 
         @Test
-        @DisplayName("Should have default blocked message")
+        @DisplayName("BlockedMessage is blank by default; the language file gives its text")
         void blockedMessage() {
             SocialConfig config = createRealConfig();
-            assertThat(config.getBlockedMessage()).isEqualTo("&c无法与 {PLAYER} 进行好友操作，因为存在黑名单关系");
+            assertThat(config.getBlockedMessage()).isEmpty();
+            assertThat(CatalogueText.text("en", "blocked")).contains("{PLAYER}");
+            assertThat(CatalogueText.text("zh", "blocked")).contains("{PLAYER}");
         }
 
         @Test
-        @DisplayName("Should have default request sent message")
+        @DisplayName("RequestSentMessage is blank by default; the language file gives its text")
         void requestSentMessage() {
             SocialConfig config = createRealConfig();
-            assertThat(config.getRequestSentMessage()).isEqualTo("&a已向 {PLAYER} 发送好友请求！");
+            assertThat(config.getRequestSentMessage()).isEmpty();
+            assertThat(CatalogueText.text("en", "request_sent")).contains("{PLAYER}");
+            assertThat(CatalogueText.text("zh", "request_sent")).contains("{PLAYER}");
         }
 
         @Test
-        @DisplayName("Should have default request received message")
+        @DisplayName("RequestReceivedMessage is blank by default; the language file gives its text")
         void requestReceivedMessage() {
             SocialConfig config = createRealConfig();
-            assertThat(config.getRequestReceivedMessage()).contains("{PLAYER}");
+            assertThat(config.getRequestReceivedMessage()).isEmpty();
+            assertThat(CatalogueText.text("en", "request_received")).contains("{PLAYER}");
+            assertThat(CatalogueText.text("zh", "request_received")).contains("{PLAYER}");
         }
 
         @Test
-        @DisplayName("Should have default request denied message")
+        @DisplayName("RequestDeniedMessage is blank by default; the language file gives its text")
         void requestDeniedMessage() {
             SocialConfig config = createRealConfig();
-            assertThat(config.getRequestDeniedMessage()).isEqualTo("&c已拒绝 {PLAYER} 的好友请求");
+            assertThat(config.getRequestDeniedMessage()).isEmpty();
+            assertThat(CatalogueText.text("en", "request_denied")).contains("{PLAYER}");
+            assertThat(CatalogueText.text("zh", "request_denied")).contains("{PLAYER}");
         }
 
         @Test
-        @DisplayName("Should have default max friends message")
+        @DisplayName("MaxFriendsMessage is blank by default; the language file gives its text")
         void maxFriendsMessage() {
             SocialConfig config = createRealConfig();
-            assertThat(config.getMaxFriendsMessage()).isEqualTo("&c你的好友数量已达上限！");
+            assertThat(config.getMaxFriendsMessage()).isEmpty();
+            assertThat(CatalogueText.text("en", "max_friends_reached")).isNotEmpty();
+            assertThat(CatalogueText.text("zh", "max_friends_reached")).isNotEmpty();
         }
 
         @Test
-        @DisplayName("Should have default already friends message")
+        @DisplayName("AlreadyFriendsMessage is blank by default; the language file gives its text")
         void alreadyFriendsMessage() {
             SocialConfig config = createRealConfig();
-            assertThat(config.getAlreadyFriendsMessage()).contains("{PLAYER}");
+            assertThat(config.getAlreadyFriendsMessage()).isEmpty();
+            assertThat(CatalogueText.text("en", "already_friends")).contains("{PLAYER}");
+            assertThat(CatalogueText.text("zh", "already_friends")).contains("{PLAYER}");
         }
 
-        @Test
-        @DisplayName("Should have default player blocked message")
-        void playerBlockedMessage() {
-            SocialConfig config = createRealConfig();
-            assertThat(config.getPlayerBlockedMessage()).contains("{PLAYER}");
-        }
 
-        @Test
-        @DisplayName("Should have default player unblocked message")
-        void playerUnblockedMessage() {
-            SocialConfig config = createRealConfig();
-            assertThat(config.getPlayerUnblockedMessage()).contains("{PLAYER}");
-        }
     }
 
     @Nested
@@ -286,21 +297,7 @@ class SocialConfigTest {
             assertThat(config.getBlockedMessage()).isEqualTo("&cBlocked!");
         }
 
-        @Test
-        @DisplayName("Should update player blocked message")
-        void setPlayerBlockedMessage() {
-            SocialConfig config = createRealConfig();
-            config.setPlayerBlockedMessage("&cYou blocked them!");
-            assertThat(config.getPlayerBlockedMessage()).isEqualTo("&cYou blocked them!");
-        }
 
-        @Test
-        @DisplayName("Should update player unblocked message")
-        void setPlayerUnblockedMessage() {
-            SocialConfig config = createRealConfig();
-            config.setPlayerUnblockedMessage("&aUnblocked!");
-            assertThat(config.getPlayerUnblockedMessage()).isEqualTo("&aUnblocked!");
-        }
     }
 
     /**
@@ -311,5 +308,25 @@ class SocialConfigTest {
         // Use mock to avoid AbstractConfigEntity file I/O, then set fields
         SocialConfig config = mock(SocialConfig.class, withSettings().useConstructor("config/social.yml").defaultAnswer(CALLS_REAL_METHODS));
         return config;
+    }
+
+    @Test
+    @DisplayName("the two blacklist messages nothing read are no longer settings (UltiKits/UltiSocial#23)")
+    void unreadBlacklistMessagesAreRemoved() {
+        for (java.lang.reflect.Field field : SocialConfig.class.getDeclaredFields()) {
+            assertThat(field.getName()).isNotIn("playerBlockedMessage", "playerUnblockedMessage");
+        }
+    }
+
+    @Test
+    @DisplayName("no text setting rejects a blank value (maintainer ruling 2026-09-24 (d))")
+    void textSettingsAcceptBlank() throws Exception {
+        for (String field : new String[] {"guiTitle", "friendAddedMessage", "friendRemovedMessage",
+                "friendOnlineMessage", "friendOfflineMessage", "requestSentMessage", "requestReceivedMessage",
+                "requestDeniedMessage", "maxFriendsMessage", "alreadyFriendsMessage", "blockedMessage"}) {
+            assertThat(SocialConfig.class.getDeclaredField(field)
+                    .isAnnotationPresent(com.ultikits.ultitools.annotations.config.NotEmpty.class))
+                    .as("%s must accept a blank value", field).isFalse();
+        }
     }
 }
