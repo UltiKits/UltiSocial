@@ -97,7 +97,6 @@ public final class UltiSocialTestHelper {
         lenient().when(config.getRequestTimeout()).thenReturn(60);
         lenient().when(config.isNotifyFriendOnline()).thenReturn(true);
         lenient().when(config.isNotifyFriendOffline()).thenReturn(true);
-        lenient().when(config.isNotifyFriendJoinWorld()).thenReturn(false);
         lenient().when(config.isTpToFriendEnabled()).thenReturn(true);
         lenient().when(config.getTpCooldown()).thenReturn(30);
         lenient().when(config.getGuiTitle()).thenReturn("&6Friend List");
