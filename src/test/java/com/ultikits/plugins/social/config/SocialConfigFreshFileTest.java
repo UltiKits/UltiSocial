@@ -34,8 +34,9 @@ import static org.mockito.Mockito.mock;
  * The file holds the 17 settings {@link SocialConfig} declares, all read by the module. Two more,
  * {@code messages.player_blocked} and {@code messages.player_unblocked}, were declared but read by
  * nothing and are removed (UltiKits/UltiSocial#23); the replies to {@code /friend block} and
- * {@code /friend unblock} come from the language file. The eleven message and title settings are
- * written blank: a blank value shows the language file's text (maintainer ruling 2026-09-24 (d)).
+ * {@code /friend unblock} come from the language file. The framework writes the eleven message and
+ * title settings with the text each shipped with in every earlier version; the module then writes them
+ * in the server's language when it starts (maintainer decision 2026-09-25; {@code SocialConfigTextTest}).
  * <p>
  * UltiKits/UltiSocial#15: {@code notifications.friend_join_world} declared a "notify when a friend
  * joins your world" feature that was never implemented; per the maintainer's 2026-09-22 decision the
@@ -127,14 +128,22 @@ class SocialConfigFreshFileTest {
     }
 
     @Test
-    @DisplayName("the title and the ten messages are written blank, so the language file gives their text")
-    void textSettingsAreWrittenBlank() throws Exception {
+    @DisplayName("the title and the ten messages are written with the text each shipped with, which is this jar's Chinese text, never blank")
+    void textSettingsAreWrittenWithTheirShippedText() throws Exception {
         YamlConfiguration yaml = freshFile();
 
+        java.util.Map<String, String> catalogueKey = new java.util.LinkedHashMap<String, String>();
+        catalogueKey.put("gui_title", "gui_friend_list");
         for (String key : EXPECTED_KEYS) {
-            if (key.equals("gui_title") || key.startsWith("messages.")) {
-                assertThat(yaml.getString(key)).as(key).isEmpty();
+            if (key.startsWith("messages.")) {
+                catalogueKey.put(key, key.substring("messages.".length()));
             }
+        }
+        assertThat(catalogueKey).hasSize(11);
+        for (java.util.Map.Entry<String, String> e : catalogueKey.entrySet()) {
+            assertThat(yaml.getString(e.getKey())).as(e.getKey())
+                    .isNotBlank()
+                    .isEqualTo(com.ultikits.plugins.social.i18n.CatalogueText.text("zh", e.getValue()));
         }
     }
 

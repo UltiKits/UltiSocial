@@ -88,8 +88,8 @@ class UltiSocialRemovedKeyEndToEndTest {
 
         logger = mock(PluginLogger.class);
         doReturn(logger).when(plugin).getLogger();
-        // The warning's text comes from the language file (English here); the start-up step that blanks
-        // shipped message defaults finds no configuration bean on this bare plugin and does nothing.
+        // The warning's text comes from the language file (English here); the start-up step that writes the
+        // title and messages in the server's language finds no configuration bean on this bare plugin and does nothing.
         doAnswer(CatalogueText.answer("en")).when(plugin).i18n(anyString());
         lenient().doReturn(null).when(plugin).getConfig(SocialConfig.class);
         return plugin;
