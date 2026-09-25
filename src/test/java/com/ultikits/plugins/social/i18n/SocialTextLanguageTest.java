@@ -167,6 +167,19 @@ class SocialTextLanguageTest {
         }
 
         @Test
+        @DisplayName("a name the player typed is echoed as typed, never colour-translated (gate-1 IN-01)")
+        void typedNameIsNotColourTranslated() {
+            try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+                bukkit.when(() -> Bukkit.getPlayerExact("&kabc")).thenReturn(null);
+                command.addFriend(player, "&kabc");
+            }
+
+            String template = CatalogueText.entries("en").get("player_not_online");
+            assertThat(sentTo(player)).containsExactly(template == null ? "<lang/en has no player_not_online>"
+                    : ChatColor.translateAlternateColorCodes('&', template).replace("{PLAYER}", "&kabc"));
+        }
+
+        @Test
         @DisplayName("no pending requests, then one pending request")
         void requests() {
             when(service.getPendingRequests(playerUuid)).thenReturn(new ArrayList<FriendRequest>());
