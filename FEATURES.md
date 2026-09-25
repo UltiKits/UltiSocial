@@ -87,9 +87,8 @@ find <repo-root>/src/main/java -path '*/gui/*' -name '*.java' -not -path '*/targ
 reading `FriendCommand.java` directly (13 `@CmdMapping` sites at lines 54, 60, 78, 94, 99, 104, 109, 126, 172, 219, 255, 264, 272) and `SocialConfig.java` (17 `@ConfigEntry` sites; 20 before
 `UltiKits/UltiSocial#15` removed `notifications.friend_join_world`, 19 before
 `UltiKits/UltiSocial#23` removed `messages.player_blocked` and `messages.player_unblocked`). The
-`find`-based GUI-class count above returns 2, matching Phase 9's own independently-derived
-GUI-exclusion register for this module (`FriendListGUI`, `BlockListGUI` — see
-`.planning/phases/09-module-ecosystem-readiness-and-test-coverage/gui-exclusions/UltiSocial.md`).
+`find`-based GUI-class count above returns 2, matching the module's independently-derived
+list of GUI classes excluded from the coverage gate (`FriendListGUI`, `BlockListGUI`).
 This document's command-row count matches the `@CmdMapping` annotation-site count exactly (13
 against 13).
 
@@ -131,8 +130,8 @@ command this repository maps.
 ## GUI
 
 Two GUI page classes, neither carrying a page-marking annotation — identified structurally (see
-Conventions' own reconciliation note for this Kind). Both are Phase 9's complete GUI-exclusion
-register for this module.
+Conventions' own reconciliation note for this Kind). Both are the complete set of this
+module's GUI classes excluded from the coverage gate.
 
 | ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
 |---|---|---|---|---|---|---|---|---|
@@ -164,7 +163,7 @@ container injected into `FriendService`, and `FriendCommand`, `FriendListGUI` an
 read it through `FriendService#getConfig()` at call time, so `/ul reload UltiSocial` (or bare
 `/ul reload`, which reloads every module) changes what the next command does.
 `ultisocial.lifecycle.reload` supersedes `ultisocial.event.module-reload` (retired with
-`UltiKits/UltiSocial#13`; its Phase 10 verdict recorded the defect, not this behaviour).
+`UltiKits/UltiSocial#13`; its earlier checklist verdict recorded the defect, not this behaviour).
 
 | ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
 |---|---|---|---|---|---|---|---|---|

@@ -167,7 +167,7 @@ class SocialTextLanguageTest {
         }
 
         @Test
-        @DisplayName("a name the player typed is echoed as typed, never colour-translated (gate-1 IN-01)")
+        @DisplayName("a name the player typed is echoed as typed, never colour-translated")
         void typedNameIsNotColourTranslated() {
             try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
                 bukkit.when(() -> Bukkit.getPlayerExact("&kabc")).thenReturn(null);

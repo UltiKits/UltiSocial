@@ -14,9 +14,9 @@ for real-machine verification, not user-facing documentation.
 - **Columns:** `ID`, `Preconditions`, `Steps`, `Expected`, `Layer`, `Covers`.
 - **ID:** cites its `FEATURES.md` ID verbatim. A negative case suffixes the checklist ID only,
   as `.neg-<slug>`.
-- **Layer**, copied verbatim from Laojun's own `ultitools-real-client-uat` skill: `protocol`,
+- **Layer**, copied verbatim from the real-client acceptance tooling's fixed vocabulary: `protocol`,
   `java-client`, `os-input`, `pixel`, `server`, `human`.
-- **Human-authenticated-session rows (D-27b):** this module has no panel-facing surface at all,
+- **Human-authenticated-session rows:** this module has no panel-facing surface at all,
   so no row below is affected; the convention is stated here for template consistency.
 - **Expected** must name an observable truth and never the words "it works". Every chat line, GUI
   text and console line this module writes follows the framework's `language` setting
@@ -29,20 +29,20 @@ for real-machine verification, not user-facing documentation.
   `language: en` leaves it so, unless a value was edited by hand). Before the session, `plugins/UltiTools/pluginConfig/UltiSocial/lang/`
   is moved aside so this jar's catalogues are extracted fresh (an upgraded install never refreshes an
   already-extracted language file, `UltiKits/UltiTools-Reborn#459`; `ultisocial.i18n.language`).
-- **Covers** back-references a Phase 9 GUI-excluded class name; left blank when no such class
+- **Covers** back-references a GUI class excluded from the JaCoCo coverage gate; left blank when no such class
   applies. This module owns both of its GUI-excluded classes (`FriendListGUI`, `BlockListGUI`) —
   each is named in exactly one row's Covers cell below.
 - A row whose Preconditions name a prior row must appear after that row in file order — asserted
   mechanically: for every row, every checklist ID cited in its Preconditions cell must have a
-  strictly smaller line number in this file (sweep class 8, D-27a).
-- **Config-per-file rule (D-06):** one checklist row per `@ConfigEntity`-annotated class or per
+  strictly smaller line number in this file.
+- **Config-per-file rule:** one checklist row per `@ConfigEntity`-annotated class or per
   shipped yml file. This module has exactly one such file (`config/social.yml`, generated from
   `SocialConfig`'s `@ConfigEntry` defaults — no packaged seed resource exists), so exactly one
   config-per-file row appears below (`ultisocial.config.social-yml`).
 - **Config text rows:** `ultisocial.config.social.materialize-fresh`, `ultisocial.config.social.materialize-switch`
   and `ultisocial.config.social.materialize-upgrade` exercise `FEATURES.md`'s
   `ultisocial.lifecycle.legacy-text-defaults` on a fresh file, across a `language` switch and on a file an earlier
-  version wrote; they are named by the phase's config-text convention (`<prefix>.config.<file stem>.materialize-*`)
+  version wrote; they are named by the config-text naming convention (`<prefix>.config.<file stem>.materialize-*`)
   rather than by that ID, and the row `ultisocial.lifecycle.legacy-text-defaults` itself covers the same step on a
   single-module `ul reload UltiSocial`. They sit under `## Lifecycle Hooks`, not `## Configuration`, which holds one
   row per config file.
@@ -80,7 +80,7 @@ for real-machine verification, not user-facing documentation.
 | ultisocial.friend.block | `language: en` in the framework's `config.yml`; `Tester1` and `Tester3` online, not already blocked in either direction | `Tester1` runs `/friend block Tester3` | `Tester1` receives `You have blocked Tester3` (the language file's `player_blocked`; the configuration key `messages.player_blocked`, which nothing ever read, is removed — `UltiKits/UltiSocial#23`); a new `BlacklistData` row now exists for `Tester1`→`Tester3` | server | |
 | ultisocial.friend.block.neg-self | `language: en` in the framework's `config.yml`; `Tester1` online | `Tester1` runs `/friend block Tester1` | `Tester1` receives `You cannot block yourself!`; no `BlacklistData` row is created | server | |
 | ultisocial.friend.block.neg-already-blocked | `language: en` in the framework's `config.yml`; `Tester1` has already blocked `Tester3` (from `ultisocial.friend.block`) | `Tester1` runs `/friend block Tester3` again | `Tester1` receives `Tester3 is already on your blacklist!`; no duplicate `BlacklistData` row is created | server | |
-| ultisocial.friend.block.neg-unfriends | `language: en` in the framework's `config.yml`; `Tester1` and `Tester2` are friends (from `ultisocial.friend.accept`, re-established if `ultisocial.friend.remove` already ran against this pair — use a fresh friendship for this row) | `Tester1` runs `/friend block Tester2` | `Tester1` receives ONLY `You have blocked Tester2` — the additional line `(Friend relationship has been automatically removed)` is dead code and never sends: `FriendService#addToBlacklist` already calls `removeFriendByUuid` (clearing both `FriendshipData` rows AND both friend caches) BEFORE `FriendCommand#blockPlayer`'s own `areFriends` check runs, so that check always evaluates false by the time it executes. Known product defect, `UltiKits/UltiSocial#17`, not fixed here per this phase's zero-new-code rule. Both `FriendshipData` rows for this pair ARE still gone (the removal itself works correctly — only the confirmatory chat line never fires), matching `ultisocial.friend.remove`'s own two-sided deletion | server | |
+| ultisocial.friend.block.neg-unfriends | `language: en` in the framework's `config.yml`; `Tester1` and `Tester2` are friends (from `ultisocial.friend.accept`, re-established if `ultisocial.friend.remove` already ran against this pair — use a fresh friendship for this row) | `Tester1` runs `/friend block Tester2` | `Tester1` receives ONLY `You have blocked Tester2` — the additional line `(Friend relationship has been automatically removed)` is dead code and never sends: `FriendService#addToBlacklist` already calls `removeFriendByUuid` (clearing both `FriendshipData` rows AND both friend caches) BEFORE `FriendCommand#blockPlayer`'s own `areFriends` check runs, so that check always evaluates false by the time it executes. Known product defect, `UltiKits/UltiSocial#17`, not fixed by this documentation-only change. Both `FriendshipData` rows for this pair ARE still gone (the removal itself works correctly — only the confirmatory chat line never fires), matching `ultisocial.friend.remove`'s own two-sided deletion | server | |
 | ultisocial.friend.unblock | `language: en` in the framework's `config.yml`; `Tester1` has blocked `Tester3` (from `ultisocial.friend.block`) | `Tester1` runs `/friend unblock Tester3` | `Tester1` receives `You have unblocked Tester3` (the language file's `player_unblocked`; `messages.player_unblocked`, which nothing ever read, is removed — `UltiKits/UltiSocial#23`); the `BlacklistData` row for `Tester1`→`Tester3` is gone; `Tester3` can now send `Tester1` a friend request again | server | |
 | ultisocial.friend.unblock.neg-not-blocked | `language: en` in the framework's `config.yml`; `Tester1` has not blocked `Tester2` | `Tester1` runs `/friend unblock Tester2` | `Tester1` receives `Tester2 is not on your blacklist!` | server | |
 | ultisocial.friend.blocklist | `Tester1` has at least one blocked player (from `ultisocial.friend.block`, re-block `Tester3` if `ultisocial.friend.unblock` already ran) | `Tester1` runs `/friend blocklist` | The `ultisocial.gui.block-list` GUI opens for `Tester1`; this row proves only that the command opens the browser — its own interactions are covered by `ultisocial.gui.block-list` below | server | BlockListGUI |
@@ -113,7 +113,7 @@ sender. `<name>` is the module's runtime name, the `name:` key of its own `plugi
 Both lines are framework strings localised by the framework's `language` setting, and so is this
 module's own text in the row, hence the row's `language: en` precondition. `/ul` requires op, so the row runs it from the server console.
 `ultisocial.lifecycle.reload` supersedes `ultisocial.event.module-reload` (retired with
-`UltiKits/UltiSocial#13`; its Phase 10 verdict recorded the defect, not this behaviour).
+`UltiKits/UltiSocial#13`; its earlier checklist verdict recorded the defect, not this behaviour).
 `ultisocial.lifecycle.removed-key-warning`'s WARNING comes from this module's language file, so it
 carries the `language: en` precondition too.
 `ultisocial.lifecycle.legacy-text-defaults` exercises the step that rewrites a title or message still
