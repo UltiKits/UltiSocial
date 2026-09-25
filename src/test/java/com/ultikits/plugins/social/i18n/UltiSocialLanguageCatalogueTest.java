@@ -77,6 +77,16 @@ class UltiSocialLanguageCatalogueTest {
             //                 + "everything else to backup.reason.unknown",
             //         "backup.reason.manual", "backup.reason.auto", "backup.reason.death",
             //         "backup.reason.quit", "backup.reason.admin", "backup.reason.unknown")
+            new DynamicSite("src/main/java/com/ultikits/plugins/social/UltiSocial.java",
+                    "::getLocalizedText",
+                    "UltiSocial#writeConfigTextInServerLanguage passes the jar catalogue's getLocalizedText "
+                            + "(ConfigTextDefaults#jarLanguage) to SocialConfig#materializeText, which asks it for exactly the "
+                            + "catalogue key of the friend-list title and the ten friend messages (maintainer decision "
+                            + "2026-09-25 and the text source decision of 2026-09-25: config text written in the server's "
+                            + "language, from the module jar's own catalogue)",
+                    "gui_friend_list", "friend_added", "friend_removed", "friend_online", "friend_offline",
+                    "request_sent", "request_received", "request_denied", "max_friends_reached",
+                    "already_friends", "blocked")
     ));
 
     private static List<SourceFile> sources;
