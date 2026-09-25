@@ -122,7 +122,7 @@ gui_blocklist_empty_hint: "&7You have not blocked anyone"
 # Console
 log_friend_update_failed: "Failed to update friend data"
 log_removed_key_check_failed: "Could not check {FILE} for removed configuration keys; the module continues without that check."
-log_config_default_save_failed: "Could not save {FILE} after replacing its old default texts with blanks"
+log_config_default_save_failed: "Could not save {FILE} after writing its title and messages in the server's language"
 removed_key_warning: "{FILE} still contains '{KEY}', which this version of UltiSocial no longer reads. {REASON} Delete the key from the file to silence this warning."
 removed_key_reason_friend_join_world: "It never had any effect: this module has no notification for a friend entering your world, and no other setting replaces it. The notification is recorded as a feature request, UltiKits/UltiSocial#21 (UltiKits/UltiSocial#15)."
 removed_key_reason_blacklist_message: "Nothing ever read it: the replies to /friend block and /friend unblock come from this module's language file (lang/en.yml, lang/zh.yml), which is where to change them (UltiKits/UltiSocial#23)."

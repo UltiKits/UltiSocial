@@ -38,8 +38,7 @@ public class FriendListGUI implements InventoryHolder {
         this.viewer = viewer;
         this.friends = friendService.getFriends(viewer.getUniqueId());
         
-        String title = FriendService.configuredOr(friendService.getConfig().getGuiTitle(),
-                friendService.i18n("gui_friend_list"))
+        String title = friendService.getConfig().getGuiTitle()
             .replace("{COUNT}", String.valueOf(friends.size()))
             .replace("{MAX}", String.valueOf(friendService.getConfig().getMaxFriends()))
             .replace("&", "§");

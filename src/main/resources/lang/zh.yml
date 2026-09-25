@@ -122,7 +122,7 @@ gui_blocklist_empty_hint: "&7你没有拉黑任何玩家"
 # 控制台
 log_friend_update_failed: "更新好友数据失败"
 log_removed_key_check_failed: "无法检查 {FILE} 中已移除的配置键；模块将跳过这项检查继续运行。"
-log_config_default_save_failed: "已将 {FILE} 中的旧默认文本替换为空值，但保存失败"
+log_config_default_save_failed: "已按服务器语言写入 {FILE} 中的标题与消息，但保存失败"
 removed_key_warning: "{FILE} 仍包含 '{KEY}'，当前版本的 UltiSocial 已不再读取该键。{REASON} 从文件中删除该键即可消除此警告。"
 removed_key_reason_friend_join_world: "它从未生效：本模块没有「好友进入你所在世界」的通知，也没有其他设置取代它。该通知已作为功能请求记录，UltiKits/UltiSocial#21（UltiKits/UltiSocial#15）。"
 removed_key_reason_blacklist_message: "从未有代码读取它：/friend block 与 /friend unblock 的回复来自本模块的语言文件（lang/en.yml、lang/zh.yml），要修改请改那里（UltiKits/UltiSocial#23）。"

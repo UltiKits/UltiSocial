@@ -58,8 +58,7 @@ public class SocialListener implements Listener {
             if (online.equals(player)) continue;
             
             if (friendService.areFriends(online.getUniqueId(), player.getUniqueId())) {
-                String message = FriendService.configuredOr(friendService.getConfig().getFriendOnlineMessage(),
-                        friendService.i18n("friend_online"))
+                String message = friendService.getConfig().getFriendOnlineMessage()
                     .replace("{PLAYER}", player.getName())
                     .replace("&", "§");
                 
@@ -89,8 +88,7 @@ public class SocialListener implements Listener {
             if (online.equals(player)) continue;
             
             if (friendService.areFriends(online.getUniqueId(), player.getUniqueId())) {
-                String message = FriendService.configuredOr(friendService.getConfig().getFriendOfflineMessage(),
-                        friendService.i18n("friend_offline"))
+                String message = friendService.getConfig().getFriendOfflineMessage()
                     .replace("{PLAYER}", player.getName())
                     .replace("&", "§");
                 

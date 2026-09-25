@@ -59,20 +59,6 @@ public class FriendService {
     }
 
     /**
-     * The message an operator configured, or the language file's text when the configured value is
-     * blank or unset (maintainer ruling 2026-09-24 (d)). Resolved each time a message is shown, never
-     * while the configuration reloads: the framework reloads configuration before it rebuilds the
-     * language, so a value resolved during a reload would come from the old language.
-     *
-     * @param configured    the value from {@code config/social.yml}
-     * @param catalogueText the language file's text for the same message
-     * @return the text to show, before placeholders and colour codes are applied
-     */
-    public static String configuredOr(String configured, String catalogueText) {
-        return configured == null || configured.trim().isEmpty() ? catalogueText : configured;
-    }
-
-    /**
      * Initialize the service.
      */
     @PostConstruct
@@ -101,7 +87,7 @@ public class FriendService {
         
         // Check blacklist (bidirectional)
         if (isBlocked(senderUuid, receiverUuid)) {
-            sender.sendMessage(configuredOr(config.getBlockedMessage(), plugin.i18n("blocked"))
+            sender.sendMessage(config.getBlockedMessage()
                 .replace("{PLAYER}", receiver.getName())
                 .replace("&", "§"));
             return false;
@@ -109,7 +95,7 @@ public class FriendService {
         
         // Check if already friends
         if (areFriends(senderUuid, receiverUuid)) {
-            sender.sendMessage(configuredOr(config.getAlreadyFriendsMessage(), plugin.i18n("already_friends"))
+            sender.sendMessage(config.getAlreadyFriendsMessage()
                 .replace("{PLAYER}", receiver.getName())
                 .replace("&", "§"));
             return false;
@@ -117,7 +103,7 @@ public class FriendService {
         
         // Check max friends limit
         if (getFriendCount(senderUuid) >= config.getMaxFriends()) {
-            sender.sendMessage(configuredOr(config.getMaxFriendsMessage(), plugin.i18n("max_friends_reached")).replace("&", "§"));
+            sender.sendMessage(config.getMaxFriendsMessage().replace("&", "§"));
             return false;
         }
         
@@ -146,11 +132,11 @@ public class FriendService {
         // Add request
         requests.add(FriendRequest.create(senderUuid, sender.getName(), receiverUuid));
         
-        sender.sendMessage(configuredOr(config.getRequestSentMessage(), plugin.i18n("request_sent"))
+        sender.sendMessage(config.getRequestSentMessage()
             .replace("{PLAYER}", receiver.getName())
             .replace("&", "§"));
         
-        receiver.sendMessage(configuredOr(config.getRequestReceivedMessage(), plugin.i18n("request_received"))
+        receiver.sendMessage(config.getRequestReceivedMessage()
             .replace("{PLAYER}", sender.getName())
             .replace("&", "§"));
         
@@ -185,7 +171,7 @@ public class FriendService {
         
         // Check max friends
         if (getFriendCount(receiverUuid) >= config.getMaxFriends()) {
-            receiver.sendMessage(configuredOr(config.getMaxFriendsMessage(), plugin.i18n("max_friends_reached")).replace("&", "§"));
+            receiver.sendMessage(config.getMaxFriendsMessage().replace("&", "§"));
             return false;
         }
         
@@ -197,13 +183,13 @@ public class FriendService {
         requests.remove(request);
         
         // Notify both players
-        receiver.sendMessage(configuredOr(config.getFriendAddedMessage(), plugin.i18n("friend_added"))
+        receiver.sendMessage(config.getFriendAddedMessage()
             .replace("{PLAYER}", senderName)
             .replace("&", "§"));
         
         Player sender = Bukkit.getPlayer(request.getSender());
         if (sender != null) {
-            sender.sendMessage(configuredOr(config.getFriendAddedMessage(), plugin.i18n("friend_added"))
+            sender.sendMessage(config.getFriendAddedMessage()
                 .replace("{PLAYER}", receiver.getName())
                 .replace("&", "§"));
         }
@@ -243,7 +229,7 @@ public class FriendService {
         
         requests.remove(request);
         
-        receiver.sendMessage(configuredOr(config.getRequestDeniedMessage(), plugin.i18n("request_denied"))
+        receiver.sendMessage(config.getRequestDeniedMessage()
             .replace("{PLAYER}", senderName)
             .replace("&", "§"));
         
@@ -292,7 +278,7 @@ public class FriendService {
         friendCache.remove(playerUuid);
         friendCache.remove(UUID.fromString(toRemove.getFriendUuid()));
         
-        player.sendMessage(configuredOr(config.getFriendRemovedMessage(), plugin.i18n("friend_removed"))
+        player.sendMessage(config.getFriendRemovedMessage()
             .replace("{PLAYER}", friendName)
             .replace("&", "§"));
         
