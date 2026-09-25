@@ -115,7 +115,7 @@ gui_block_reason: "&7Reason: &f{REASON}"
 gui_unblock_hint: "&7Once unblocked, they can be added as a friend again"
 gui_back: "&eBack to friend list"
 gui_click_back: "&7Click to go back"
-gui_blocked_total: "&7{COUNT} players blocked"
+gui_blocked_total: "&7Blocked players: {COUNT}"
 gui_blocklist_empty: "&aYour blacklist is empty"
 gui_blocklist_empty_hint: "&7You have not blocked anyone"
 

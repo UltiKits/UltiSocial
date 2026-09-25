@@ -77,24 +77,20 @@ public class SocialConfig extends AbstractConfigEntity {
     @ConfigEntry(path = "messages.blocked", comment = "Blocked player message (bidirectional) (blank: the language file's text)")
     private String blockedMessage = "";
 
-    /**
-     * The default each text setting had in every earlier version, read from this class's history (one
-     * value per setting, from the first release until the language file took over). Kept only to be
-     * recognised in an upgraded operator's file and blanked; never shown.
-     */
-    private static final String[][] SHIPPED_DEFAULTS = {
-        {"guiTitle", "&6好友列表 &7({COUNT}/{MAX})"},
-        {"friendAddedMessage", "&a你和 {PLAYER} 成为了好友！"},
-        {"friendRemovedMessage", "&c你已删除好友 {PLAYER}"},
-        {"friendOnlineMessage", "&a你的好友 {PLAYER} 上线了！"},
-        {"friendOfflineMessage", "&7你的好友 {PLAYER} 下线了"},
-        {"requestSentMessage", "&a已向 {PLAYER} 发送好友请求！"},
-        {"requestReceivedMessage", "&e{PLAYER} 想和你成为好友！输入 /friend accept {PLAYER} 接受"},
-        {"requestDeniedMessage", "&c已拒绝 {PLAYER} 的好友请求"},
-        {"maxFriendsMessage", "&c你的好友数量已达上限！"},
-        {"alreadyFriendsMessage", "&c你已经和 {PLAYER} 是好友了！"},
-        {"blockedMessage", "&c无法与 {PLAYER} 进行好友操作，因为存在黑名单关系"}
-    };
+    // The default each text setting had in every earlier version, read from this class's history (one
+    // value per setting, from the first release until the language file took over). Kept only to be
+    // recognised in an upgraded operator's file and blanked; never shown.
+    private static final String SHIPPED_GUI_TITLE = "&6好友列表 &7({COUNT}/{MAX})";
+    private static final String SHIPPED_FRIEND_ADDED_MESSAGE = "&a你和 {PLAYER} 成为了好友！";
+    private static final String SHIPPED_FRIEND_REMOVED_MESSAGE = "&c你已删除好友 {PLAYER}";
+    private static final String SHIPPED_FRIEND_ONLINE_MESSAGE = "&a你的好友 {PLAYER} 上线了！";
+    private static final String SHIPPED_FRIEND_OFFLINE_MESSAGE = "&7你的好友 {PLAYER} 下线了";
+    private static final String SHIPPED_REQUEST_SENT_MESSAGE = "&a已向 {PLAYER} 发送好友请求！";
+    private static final String SHIPPED_REQUEST_RECEIVED_MESSAGE = "&e{PLAYER} 想和你成为好友！输入 /friend accept {PLAYER} 接受";
+    private static final String SHIPPED_REQUEST_DENIED_MESSAGE = "&c已拒绝 {PLAYER} 的好友请求";
+    private static final String SHIPPED_MAX_FRIENDS_MESSAGE = "&c你的好友数量已达上限！";
+    private static final String SHIPPED_ALREADY_FRIENDS_MESSAGE = "&c你已经和 {PLAYER} 是好友了！";
+    private static final String SHIPPED_BLOCKED_MESSAGE = "&c无法与 {PLAYER} 进行好友操作，因为存在黑名单关系";
 
     /**
      * Blanks every text setting that is exactly the default an earlier version shipped, so the
@@ -106,47 +102,47 @@ public class SocialConfig extends AbstractConfigEntity {
      */
     public boolean migrateLegacyDefaults() {
         boolean changed = false;
-        if (SHIPPED_DEFAULTS[0][1].equals(guiTitle)) {
+        if (SHIPPED_GUI_TITLE.equals(guiTitle)) {
             guiTitle = "";
             changed = true;
         }
-        if (SHIPPED_DEFAULTS[1][1].equals(friendAddedMessage)) {
+        if (SHIPPED_FRIEND_ADDED_MESSAGE.equals(friendAddedMessage)) {
             friendAddedMessage = "";
             changed = true;
         }
-        if (SHIPPED_DEFAULTS[2][1].equals(friendRemovedMessage)) {
+        if (SHIPPED_FRIEND_REMOVED_MESSAGE.equals(friendRemovedMessage)) {
             friendRemovedMessage = "";
             changed = true;
         }
-        if (SHIPPED_DEFAULTS[3][1].equals(friendOnlineMessage)) {
+        if (SHIPPED_FRIEND_ONLINE_MESSAGE.equals(friendOnlineMessage)) {
             friendOnlineMessage = "";
             changed = true;
         }
-        if (SHIPPED_DEFAULTS[4][1].equals(friendOfflineMessage)) {
+        if (SHIPPED_FRIEND_OFFLINE_MESSAGE.equals(friendOfflineMessage)) {
             friendOfflineMessage = "";
             changed = true;
         }
-        if (SHIPPED_DEFAULTS[5][1].equals(requestSentMessage)) {
+        if (SHIPPED_REQUEST_SENT_MESSAGE.equals(requestSentMessage)) {
             requestSentMessage = "";
             changed = true;
         }
-        if (SHIPPED_DEFAULTS[6][1].equals(requestReceivedMessage)) {
+        if (SHIPPED_REQUEST_RECEIVED_MESSAGE.equals(requestReceivedMessage)) {
             requestReceivedMessage = "";
             changed = true;
         }
-        if (SHIPPED_DEFAULTS[7][1].equals(requestDeniedMessage)) {
+        if (SHIPPED_REQUEST_DENIED_MESSAGE.equals(requestDeniedMessage)) {
             requestDeniedMessage = "";
             changed = true;
         }
-        if (SHIPPED_DEFAULTS[8][1].equals(maxFriendsMessage)) {
+        if (SHIPPED_MAX_FRIENDS_MESSAGE.equals(maxFriendsMessage)) {
             maxFriendsMessage = "";
             changed = true;
         }
-        if (SHIPPED_DEFAULTS[9][1].equals(alreadyFriendsMessage)) {
+        if (SHIPPED_ALREADY_FRIENDS_MESSAGE.equals(alreadyFriendsMessage)) {
             alreadyFriendsMessage = "";
             changed = true;
         }
-        if (SHIPPED_DEFAULTS[10][1].equals(blockedMessage)) {
+        if (SHIPPED_BLOCKED_MESSAGE.equals(blockedMessage)) {
             blockedMessage = "";
             changed = true;
         }
