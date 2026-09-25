@@ -79,7 +79,7 @@ public class FriendCommand extends BaseCommandExecutor {
     public void addFriend(@CmdSender Player sender, @CmdParam("player") String targetName) {
         Player target = Bukkit.getPlayerExact(targetName);
         if (target == null) {
-            sender.sendMessage(text(friendService.i18n("player_not_online").replace("{PLAYER}", targetName)));
+            sender.sendMessage(text(friendService.i18n("player_not_online")).replace("{PLAYER}", targetName));
             return;
         }
         
