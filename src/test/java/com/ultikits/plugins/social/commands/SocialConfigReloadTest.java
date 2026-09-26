@@ -96,6 +96,8 @@ class SocialConfigReloadTest {
         FriendService service = new FriendService();
         setField(FriendService.class, service, "config", config);
         setField(FriendService.class, service, "dataOperator", dataOperator);
+        // The replies below come from the language file through the service's plugin.
+        setField(FriendService.class, service, "plugin", UltiSocialTestHelper.getMockPlugin());
         assertThat(registered.values()).singleElement().isSameAs(service.getConfig());
         FriendCommand command = new FriendCommand(service, mock(TeleportService.class));
         Player player = UltiSocialTestHelper.createMockPlayer("Tester1", UUID.randomUUID());

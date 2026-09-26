@@ -20,7 +20,41 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   （`/ul reload` 或 `/ul reload UltiSocial`）输出一条警告，指明模块、文件和键，并说明没有其他设置取代它。
   从文件中删除该键即可消除警告；保留它不会产生其他任何影响（UltiKits/UltiSocial#15）。
 
+### Changed
+
+- Message and title settings in `config/social.yml` — the friend-list title (`gui_title`) and
+  the ten messages (`messages.friend_added`, `friend_removed`, `friend_online`, `friend_offline`,
+  `request_sent`, `request_received`, `request_denied`, `max_friends_reached`, `already_friends`,
+  `blocked`) — are written in the server's language when the module starts, and the file is what the
+  module shows (for example `messages.friend_added` holds `&aYou and {PLAYER} are now friends!` under
+  `language: en`); previously they were fixed Chinese text, so `language: en` had no effect on them
+  (UltiKits/UltiSocial#14). A setting that is still built-in text — in any language, or a default an
+  earlier version shipped — follows `language`: it is rewritten when the module starts or after
+  `/ul reload`. A setting you edited is kept. To keep a built-in text but stop it following
+  `language`, change at least one character. The text written is this module's built-in text: edit
+  these settings in `config/social.yml`; an edit of the extracted language file does not change them
+  (earlier versions never read them from the language file either).
+- `config/social.yml` 中的消息与标题设置——好友列表标题（`gui_title`）与十条消息（`messages.friend_added`、
+  `friend_removed`、`friend_online`、`friend_offline`、`request_sent`、`request_received`、`request_denied`、
+  `max_friends_reached`、`already_friends`、`blocked`）——在模块启动时按服务器语言写入，文件内容即模块显示的内容；
+  此前它们是写死的中文，`language: en` 对它们不起作用（UltiKits/UltiSocial#14）。仍为内置文本（任一语言的内置文本，
+  或旧版本的出厂默认值）的设置会跟随 `language`：模块启动或执行 `/ul reload` 后改写为当前语言的文本。你改过的设置
+  保持不变。若想保留内置文本又不让它跟随语言，请至少改动一个字符。写入的是本模块的内置文本：请在 `config/social.yml`
+  中修改这些设置；修改已解压的语言文件不会改变它们（旧版本同样从不从语言文件读取它们）。
+
 ### Fixed
+
+- `language: en` now applies to everything this module shows or logs: every `/friend` reply and the
+  help, both GUIs (titles, lore, game-mode names, click tips, buttons), the replies to GUI clicks, the
+  command description, and the console lines. Most of this was fixed Chinese text in every language,
+  although the language files already held English text for it that no code read; the console lines
+  were fixed English text and now follow `language: zh` too (UltiKits/UltiSocial#14). A private
+  message's own words are shown exactly as typed. The enable line now reads
+  `UltiSocial has been enabled!`; it used to name a version, v1.1.0, that this module never had.
+- `language: en` 现在对本模块显示或记录的全部内容生效：`/friend` 的所有回复与帮助、两个界面（标题、说明、游戏模式名称、
+  点击提示、按钮）、界面点击的回复、命令描述以及控制台日志。其中大部分原先在任何语言下都是写死的中文，而语言文件中其实已有
+  无人读取的英文文本；控制台日志原先写死为英文，现在也跟随 `language: zh`（UltiKits/UltiSocial#14）。私聊消息本身按原样显示。
+  启用日志现为 `UltiSocial has been enabled!`，此前其中写的版本号 v1.1.0 本模块从未有过。
 
 - Reloading this module (`/ul reload UltiSocial`, or `/ul reload` for every module) now re-reads
   `config/social.yml` and refreshes the language files, so an edited value such as
@@ -43,6 +77,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   此前两者都会一直生效到服务器重启（UltiKits/UltiSocial#13）。
 
 ### Removed
+
+- `messages.player_blocked` and `messages.player_unblocked` never took effect and have been removed;
+  they can be deleted from existing `config/social.yml` files. Nothing ever read them: `/friend block`
+  and `/friend unblock` replied with fixed text, and now reply from the language file (`lang/en.yml`,
+  `lang/zh.yml`), which is where to change those replies. A file that still holds either key gets
+  the same warning as `notifications.friend_join_world`, at start-up and on every reload of the
+  module (UltiKits/UltiSocial#23).
+- `messages.player_blocked` 与 `messages.player_unblocked` 从未生效，现已移除，可从现有的 `config/social.yml` 中删除。
+  从未有代码读取它们：`/friend block` 与 `/friend unblock` 的回复原为写死的文本，现在来自语言文件（`lang/en.yml`、
+  `lang/zh.yml`），要修改这两条回复请改那里。仍含其中任一键的文件，会在启动时以及每次重载本模块时收到与
+  `notifications.friend_join_world` 相同的警告（UltiKits/UltiSocial#23）。
 
 - The module's own console lines `UltiSocial has been disabled!` (on unload) and
   `UltiSocial configuration reloaded!` (on `/ul reload UltiSocial` or `/ul reload`). Both were

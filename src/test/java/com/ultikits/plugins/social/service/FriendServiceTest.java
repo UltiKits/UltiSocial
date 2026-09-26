@@ -89,6 +89,15 @@ class FriendServiceTest {
         friend = UltiSocialTestHelper.createMockPlayer("TestFriend", friendUuid);
     }
 
+    /**
+     * The console line the Chinese catalogue gives {@code key}, or a marker naming the missing key: the
+     * update-failure log line follows the language setting (UltiKits/UltiSocial#14).
+     */
+    private static String zhLogLine(String key) {
+        String text = com.ultikits.plugins.social.i18n.CatalogueText.entries("zh").get(key);
+        return text == null ? "<lang/zh has no " + key + ">" : text;
+    }
+
     @AfterEach
     void tearDown() throws Exception {
         UltiSocialTestHelper.tearDown();
@@ -262,7 +271,7 @@ class FriendServiceTest {
             boolean result = service.acceptRequest(friend, "NonExistent");
 
             assertThat(result).isFalse();
-            verify(friend).sendMessage(contains("no_pending_request"));
+            verify(friend).sendMessage(contains("没有来自"));
         }
 
         @Test
@@ -285,7 +294,7 @@ class FriendServiceTest {
             boolean result = service.acceptRequest(friend, "TestPlayer");
 
             assertThat(result).isFalse();
-            verify(friend).sendMessage(contains("request_expired"));
+            verify(friend).sendMessage(contains("已过期"));
         }
 
         @Test
@@ -382,7 +391,7 @@ class FriendServiceTest {
             boolean result = service.denyRequest(friend, "NonExistent");
 
             assertThat(result).isFalse();
-            verify(friend).sendMessage(contains("no_pending_request"));
+            verify(friend).sendMessage(contains("没有来自"));
         }
 
         @Test
@@ -449,7 +458,7 @@ class FriendServiceTest {
             boolean result = service.removeFriend(player, "NonExistent");
 
             assertThat(result).isFalse();
-            verify(player).sendMessage(contains("not_friend"));
+            verify(player).sendMessage(contains("不是你的好友"));
         }
 
         @Test
@@ -1213,7 +1222,7 @@ class FriendServiceTest {
 
             assertThat(friendship.isFavorite()).isTrue();
             verify(UltiSocialTestHelper.getMockLogger()).error(
-                    eq("Failed to update friend data"), any(IllegalAccessException.class));
+                    eq(zhLogLine("log_friend_update_failed")), any(IllegalAccessException.class));
         }
     }
 
@@ -1307,7 +1316,7 @@ class FriendServiceTest {
 
             assertThat(friendship.getNickname()).isEqualTo("Buddy");
             verify(UltiSocialTestHelper.getMockLogger()).error(
-                    eq("Failed to update friend data"), any(IllegalAccessException.class));
+                    eq(zhLogLine("log_friend_update_failed")), any(IllegalAccessException.class));
         }
     }
 

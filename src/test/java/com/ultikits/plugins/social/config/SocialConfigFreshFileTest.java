@@ -31,10 +31,12 @@ import static org.mockito.Mockito.mock;
  * keys in a fresh file IS the module's declared configuration surface. These tests drive a real
  * {@link ConfigManager} against an empty module folder and read back the file it writes.
  * <p>
- * The file holds the 19 settings {@link SocialConfig} declares. 17 of them are read by the module;
- * the other two, {@code messages.player_blocked} and {@code messages.player_unblocked}, are declared
- * but read by nothing, and are tracked in UltiKits/UltiSocial#23 (to be decided in wave 3). They are
- * listed here because a fresh file does contain them; this test does not claim they take effect.
+ * The file holds the 17 settings {@link SocialConfig} declares, all read by the module. Two more,
+ * {@code messages.player_blocked} and {@code messages.player_unblocked}, were declared but read by
+ * nothing and are removed (UltiKits/UltiSocial#23); the replies to {@code /friend block} and
+ * {@code /friend unblock} come from the language file. The framework writes the eleven message and
+ * title settings with the text each shipped with in every earlier version; the module then writes them
+ * in the server's language when it starts (maintainer decision 2026-09-25; {@code SocialConfigTextTest}).
  * <p>
  * UltiKits/UltiSocial#15: {@code notifications.friend_join_world} declared a "notify when a friend
  * joins your world" feature that was never implemented; per the maintainer's 2026-09-22 decision the
@@ -46,8 +48,7 @@ import static org.mockito.Mockito.mock;
 class SocialConfigFreshFileTest {
 
     /**
-     * Every key a fresh file must hold, in the order {@link SocialConfig} declares them. The last two
-     * are declared but never read (UltiKits/UltiSocial#23).
+     * Every key a fresh file must hold, in the order {@link SocialConfig} declares them.
      */
     private static final List<String> EXPECTED_KEYS = Arrays.asList(
             "max_friends",
@@ -66,9 +67,7 @@ class SocialConfigFreshFileTest {
             "messages.request_denied",
             "messages.max_friends_reached",
             "messages.already_friends",
-            "messages.blocked",
-            "messages.player_blocked",
-            "messages.player_unblocked");
+            "messages.blocked");
 
     @TempDir
     Path moduleFolder;
@@ -114,7 +113,7 @@ class SocialConfigFreshFileTest {
     }
 
     @Test
-    @DisplayName("the whole file holds exactly the 19 settings SocialConfig declares and FEATURES.md lists, and no other")
+    @DisplayName("the whole file holds exactly the 17 settings SocialConfig declares and FEATURES.md lists, and no other")
     void holdsExactlyTheDocumentedKeys() throws Exception {
         YamlConfiguration yaml = freshFile();
 
@@ -125,7 +124,27 @@ class SocialConfigFreshFileTest {
             }
         }
         assertThat(leaves).containsExactlyInAnyOrderElementsOf(EXPECTED_KEYS);
-        assertThat(leaves).hasSize(19);
+        assertThat(leaves).hasSize(17);
+    }
+
+    @Test
+    @DisplayName("the title and the ten messages are written with the text each shipped with, which is this jar's Chinese text, never blank")
+    void textSettingsAreWrittenWithTheirShippedText() throws Exception {
+        YamlConfiguration yaml = freshFile();
+
+        java.util.Map<String, String> catalogueKey = new java.util.LinkedHashMap<String, String>();
+        catalogueKey.put("gui_title", "gui_friend_list");
+        for (String key : EXPECTED_KEYS) {
+            if (key.startsWith("messages.")) {
+                catalogueKey.put(key, key.substring("messages.".length()));
+            }
+        }
+        assertThat(catalogueKey).hasSize(11);
+        for (java.util.Map.Entry<String, String> e : catalogueKey.entrySet()) {
+            assertThat(yaml.getString(e.getKey())).as(e.getKey())
+                    .isNotBlank()
+                    .isEqualTo(com.ultikits.plugins.social.i18n.CatalogueText.text("zh", e.getValue()));
+        }
     }
 
     @SuppressWarnings("PMD.AvoidAccessibilityAlteration") // points the module's config folder at a temp directory

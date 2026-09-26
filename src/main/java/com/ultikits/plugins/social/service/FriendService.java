@@ -48,6 +48,17 @@ public class FriendService {
     private final Map<UUID, Long> tpCooldowns = new ConcurrentHashMap<>();
     
     /**
+     * This module's language-file text for {@code key}, in the server's language. The GUIs, the
+     * command and the listener reach the catalogue through the service they already hold.
+     *
+     * @param key a key of {@code lang/en.yml} and {@code lang/zh.yml}
+     * @return the text, or {@code key} itself when the catalogue has no such key
+     */
+    public String i18n(String key) {
+        return plugin.i18n(key);
+    }
+
+    /**
      * Initialize the service.
      */
     @PostConstruct
@@ -345,7 +356,7 @@ public class FriendService {
                 try {
                     dataOperator.update(friend);
                 } catch (IllegalAccessException e) {
-                    plugin.getLogger().error("Failed to update friend data", e);
+                    plugin.getLogger().error(plugin.i18n("log_friend_update_failed"), e);
                 }
                 friendCache.remove(playerUuid);
                 break;
@@ -364,7 +375,7 @@ public class FriendService {
                 try {
                     dataOperator.update(friend);
                 } catch (IllegalAccessException e) {
-                    plugin.getLogger().error("Failed to update friend data", e);
+                    plugin.getLogger().error(plugin.i18n("log_friend_update_failed"), e);
                 }
                 friendCache.remove(playerUuid);
                 break;

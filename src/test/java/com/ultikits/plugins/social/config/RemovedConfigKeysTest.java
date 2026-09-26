@@ -1,5 +1,8 @@
 package com.ultikits.plugins.social.config;
 
+import com.ultikits.plugins.social.i18n.CatalogueText;
+import com.ultikits.plugins.social.i18n.SocialSeams;
+import com.ultikits.ultitools.abstracts.UltiToolsPlugin;
 import com.ultikits.ultitools.annotations.ConfigEntry;
 
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +32,20 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  */
 @DisplayName("RemovedConfigKeys (UltiKits/UltiSocial#15)")
 class RemovedConfigKeysTest {
+
+    /**
+     * The module, answering {@code i18n} from its English catalogue: the assertions below quote the
+     * English guidance an operator reads under {@code language: en}.
+     */
+    private static final UltiToolsPlugin ENGLISH = englishPlugin();
+
+    private static UltiToolsPlugin englishPlugin() {
+        UltiToolsPlugin plugin = org.mockito.Mockito.mock(UltiToolsPlugin.class);
+        org.mockito.Mockito.when(plugin.i18n(org.mockito.ArgumentMatchers.anyString()))
+                .thenAnswer(CatalogueText.answer("en"));
+        return plugin;
+    }
+
 
     /** The shape the framework wrote on every server that ran an earlier version. */
     private static final String FILE_WITH_THE_REMOVED_KEY =
@@ -61,7 +78,7 @@ class RemovedConfigKeysTest {
         File file = write(dir, FILE_WITH_THE_REMOVED_KEY);
         List<String> warnings = new ArrayList<String>();
 
-        RemovedConfigKeys.warnAboutLeftovers(file, warnings::add);
+        SocialSeams.warnAboutLeftovers(file, warnings::add, ENGLISH);
 
         assertThat(warnings).hasSize(1);
         String warning = warnings.get(0);
@@ -82,7 +99,7 @@ class RemovedConfigKeysTest {
         File file = write(dir, "notifications:\n  friend_join_world: true\n");
         List<String> warnings = new ArrayList<String>();
 
-        RemovedConfigKeys.warnAboutLeftovers(file, warnings::add);
+        SocialSeams.warnAboutLeftovers(file, warnings::add, ENGLISH);
 
         assertThat(warnings).hasSize(1);
         assertThat(warnings.get(0)).contains("'notifications.friend_join_world'");
@@ -94,9 +111,23 @@ class RemovedConfigKeysTest {
         File file = write(dir, FILE_WITHOUT_THE_REMOVED_KEY);
         List<String> warnings = new ArrayList<String>();
 
-        RemovedConfigKeys.warnAboutLeftovers(file, warnings::add);
+        SocialSeams.warnAboutLeftovers(file, warnings::add, ENGLISH);
 
         assertThat(warnings).isEmpty();
+    }
+
+    @Test
+    @DisplayName("the two unread blacklist messages are reported when still in the file (UltiKits/UltiSocial#23)")
+    void reportsTheUnreadBlacklistMessages(@TempDir File dir) throws IOException {
+        List<String> warnings = new ArrayList<String>();
+        File file = write(dir, "messages:\n  player_blocked: '&cBlocked {PLAYER}'\n  player_unblocked: 'x'\n");
+
+        SocialSeams.warnAboutLeftovers(file, warnings::add, ENGLISH);
+
+        assertThat(warnings).hasSize(2);
+        assertThat(warnings.get(0)).contains("'messages.player_blocked'").contains(file.getPath())
+                .contains("UltiKits/UltiSocial#23").contains("language file");
+        assertThat(warnings.get(1)).contains("'messages.player_unblocked'").contains("UltiKits/UltiSocial#23");
     }
 
     @Test
@@ -106,10 +137,10 @@ class RemovedConfigKeysTest {
         File unparseable = write(dir, "notifications:\n  friend_join_world: [unclosed\n");
 
         assertThatCode(() -> {
-            RemovedConfigKeys.warnAboutLeftovers(new File(dir, "absent.yml"), warnings::add);
-            RemovedConfigKeys.warnAboutLeftovers(null, warnings::add);
-            RemovedConfigKeys.warnAboutLeftovers(dir, warnings::add);
-            RemovedConfigKeys.warnAboutLeftovers(unparseable, warnings::add);
+            SocialSeams.warnAboutLeftovers(new File(dir, "absent.yml"), warnings::add, ENGLISH);
+            SocialSeams.warnAboutLeftovers(null, warnings::add, ENGLISH);
+            SocialSeams.warnAboutLeftovers(dir, warnings::add, ENGLISH);
+            SocialSeams.warnAboutLeftovers(unparseable, warnings::add, ENGLISH);
         }).doesNotThrowAnyException();
 
         assertThat(warnings).isEmpty();
@@ -129,7 +160,8 @@ class RemovedConfigKeysTest {
         assertThat(declared).as("control: the scan sees SocialConfig's keys")
                 .contains("notifications.friend_online", "notifications.friend_offline");
         assertThat(RemovedConfigKeys.removedKeys().keySet())
-                .containsExactly("notifications.friend_join_world")
+                .containsExactly("notifications.friend_join_world", "messages.player_blocked",
+                        "messages.player_unblocked")
                 .doesNotContainAnyElementsOf(declared);
     }
 }

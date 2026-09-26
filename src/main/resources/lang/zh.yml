@@ -73,3 +73,56 @@ help_block_title: "&6=== 黑名单功能 ==="
 help_block: "&e/friend block <玩家> &f- 拉黑玩家"
 help_unblock: "&e/friend unblock <玩家> &f- 解除拉黑"
 help_blocklist: "&e/friend blocklist &f- 查看黑名单"
+
+# 命令描述（/help 中显示）
+command_description: "好友系统"
+
+# /friend list 与 /friend requests
+list_empty: "&e你还没有好友，使用 /friend add <玩家> 添加好友"
+list_header: "&6=== 好友列表 ({COUNT}) ==="
+status_online: "&a● 在线"
+status_offline: "&7○ 离线"
+requests_empty: "&e你没有待处理的好友请求"
+requests_header: "&6=== 好友请求 ==="
+requests_entry: "&e- &f{PLAYER} &7(点击接受: /friend accept {PLAYER})"
+friend_not_online: "&c{PLAYER} 不在线！"
+
+# 私聊
+msg_empty: "&c请输入要发送的消息！用法: /friend msg <好友> <消息>"
+msg_received: "&f{SENDER} &7→ &f你: &r"
+msg_sent: "&f你 &7→ &f{RECEIVER}: &r"
+msg_use_command: "&e请使用命令发送私聊: &f/friend msg {PLAYER} <消息>"
+unblock_failed: "&c解除拉黑失败！"
+
+# 好友列表界面
+gui_world: "&7世界: &f{WORLD}"
+gui_mode: "&7模式: &f{MODE}"
+gui_added_time: "&7添加时间: &f{TIME}"
+gui_click_remove_offline: "&c右键点击: 删除好友"
+gamemode_survival: "生存模式"
+gamemode_creative: "创造模式"
+gamemode_adventure: "冒险模式"
+gamemode_spectator: "旁观模式"
+gui_prev_page: "&a上一页"
+gui_next_page: "&a下一页"
+gui_requests: "&e待处理的好友请求 ({COUNT})"
+gui_click_view: "&7点击查看"
+gui_page: "&e第 {PAGE} / {TOTAL} 页"
+
+# 黑名单界面
+gui_blocked_time: "&7拉黑时间: &f{TIME}"
+gui_block_reason: "&7原因: &f{REASON}"
+gui_unblock_hint: "&7解除后可重新添加好友"
+gui_back: "&e返回好友列表"
+gui_click_back: "&7点击返回"
+gui_blocked_total: "&7共 {COUNT} 人被拉黑"
+gui_blocklist_empty: "&a黑名单为空"
+gui_blocklist_empty_hint: "&7你没有拉黑任何玩家"
+
+# 控制台
+log_friend_update_failed: "更新好友数据失败"
+log_removed_key_check_failed: "无法检查 {FILE} 中已移除的配置键；模块将跳过这项检查继续运行。"
+log_config_default_save_failed: "已按服务器语言写入 {FILE} 中的标题与消息，但保存失败"
+removed_key_warning: "{FILE} 仍包含 '{KEY}'，当前版本的 UltiSocial 已不再读取该键。{REASON} 从文件中删除该键即可消除此警告。"
+removed_key_reason_friend_join_world: "它从未生效：本模块没有「好友进入你所在世界」的通知，也没有其他设置取代它。该通知已作为功能请求记录，UltiKits/UltiSocial#21（UltiKits/UltiSocial#15）。"
+removed_key_reason_blacklist_message: "从未有代码读取它：/friend block 与 /friend unblock 的回复来自本模块的语言文件（lang/en.yml、lang/zh.yml），要修改请改那里（UltiKits/UltiSocial#23）。"

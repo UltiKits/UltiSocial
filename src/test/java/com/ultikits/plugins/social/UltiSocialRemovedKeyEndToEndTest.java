@@ -1,5 +1,6 @@
 package com.ultikits.plugins.social;
 
+import com.ultikits.plugins.social.i18n.CatalogueText;
 import com.ultikits.plugins.social.config.SocialConfig;
 import com.ultikits.ultitools.abstracts.UltiToolsPlugin;
 import com.ultikits.ultitools.interfaces.impl.logger.PluginLogger;
@@ -22,6 +23,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -84,6 +88,10 @@ class UltiSocialRemovedKeyEndToEndTest {
 
         logger = mock(PluginLogger.class);
         doReturn(logger).when(plugin).getLogger();
+        // The warning's text comes from the language file (English here); the start-up step that writes the
+        // title and messages in the server's language finds no configuration bean on this bare plugin and does nothing.
+        doAnswer(CatalogueText.answer("en")).when(plugin).i18n(anyString());
+        lenient().doReturn(null).when(plugin).getConfig(SocialConfig.class);
         return plugin;
     }
 
