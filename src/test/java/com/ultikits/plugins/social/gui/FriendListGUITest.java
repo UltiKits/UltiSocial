@@ -1,5 +1,6 @@
 package com.ultikits.plugins.social.gui;
 
+import com.ultikits.plugins.social.i18n.SocialSeams;
 import com.ultikits.plugins.social.UltiSocialTestHelper;
 import com.ultikits.plugins.social.config.SocialConfig;
 import com.ultikits.plugins.social.entity.FriendRequest;
@@ -42,6 +43,8 @@ class FriendListGUITest {
         UltiSocialTestHelper.setUp();
 
         friendService = mock(FriendService.class);
+
+        SocialSeams.speak(friendService, "zh");
         config = UltiSocialTestHelper.createDefaultConfig();
         when(friendService.getConfig()).thenReturn(config);
 

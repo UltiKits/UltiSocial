@@ -32,18 +32,22 @@ public class BlockListGUI implements InventoryHolder {
     private int currentPage = 0;
     
     private static final int ITEMS_PER_PAGE = 45;
-    private static final String GUI_TITLE = "§4黑名单管理";
     
     public BlockListGUI(FriendService friendService, Player viewer) {
         this.friendService = friendService;
         this.viewer = viewer;
         this.blockedUsers = new ArrayList<>(friendService.getBlacklist(viewer.getUniqueId()));
         
-        String title = GUI_TITLE + " §7(" + blockedUsers.size() + ")";
+        String title = i18n("gui_blocklist") + " " + ChatColor.GRAY + "(" + blockedUsers.size() + ")";
         this.inventory = Bukkit.createInventory(this, 54, title);
         updateInventory();
     }
     
+    /** This module's language-file text for {@code key}, with its {@code &} colour codes applied. */
+    private String i18n(String key) {
+        return ChatColor.translateAlternateColorCodes('&', friendService.i18n(key));
+    }
+
     /**
      * Update inventory contents.
      */
@@ -78,15 +82,15 @@ public class BlockListGUI implements InventoryHolder {
             
             // Lore
             List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.GRAY + "拉黑时间: " + ChatColor.WHITE + formatTime(blocked.getCreatedTime()));
+            lore.add(i18n("gui_blocked_time").replace("{TIME}", formatTime(blocked.getCreatedTime())));
             
             if (blocked.getReason() != null && !blocked.getReason().isEmpty()) {
-                lore.add(ChatColor.GRAY + "原因: " + ChatColor.WHITE + blocked.getReason());
+                lore.add(i18n("gui_block_reason").replace("{REASON}", blocked.getReason()));
             }
             
             lore.add("");
-            lore.add(ChatColor.GREEN + "左键点击: 解除拉黑");
-            lore.add(ChatColor.GRAY + "解除后可重新添加好友");
+            lore.add(i18n("gui_click_unblock"));
+            lore.add(i18n("gui_unblock_hint"));
             
             meta.setLore(lore);
             skull.setItemMeta(meta);
@@ -110,29 +114,30 @@ public class BlockListGUI implements InventoryHolder {
         
         // Previous page
         if (currentPage > 0) {
-            inventory.setItem(45, createItem(Material.ARROW, ChatColor.GREEN + "上一页"));
+            inventory.setItem(45, createItem(Material.ARROW, i18n("gui_prev_page")));
         }
         
         // Back to friend list button
         inventory.setItem(47, createItem(Material.BOOK, 
-            ChatColor.YELLOW + "返回好友列表",
-            ChatColor.GRAY + "点击返回"));
+            i18n("gui_back"),
+            i18n("gui_click_back")));
         
         // Page indicator
         inventory.setItem(49, createItem(Material.PAPER, 
-            ChatColor.YELLOW + "第 " + (currentPage + 1) + " / " + totalPages + " 页",
-            ChatColor.GRAY + "共 " + blockedUsers.size() + " 人被拉黑"));
+            i18n("gui_page").replace("{PAGE}", String.valueOf(currentPage + 1))
+                .replace("{TOTAL}", String.valueOf(totalPages)),
+            i18n("gui_blocked_total").replace("{COUNT}", String.valueOf(blockedUsers.size()))));
         
         // Empty slot info
         if (blockedUsers.isEmpty()) {
             inventory.setItem(22, createItem(Material.EMERALD,
-                ChatColor.GREEN + "黑名单为空",
-                ChatColor.GRAY + "你没有拉黑任何玩家"));
+                i18n("gui_blocklist_empty"),
+                i18n("gui_blocklist_empty_hint")));
         }
         
         // Next page
         if (currentPage < totalPages - 1) {
-            inventory.setItem(53, createItem(Material.ARROW, ChatColor.GREEN + "下一页"));
+            inventory.setItem(53, createItem(Material.ARROW, i18n("gui_next_page")));
         }
     }
     

@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @CmdExecutor(
     alias = {"friend", "friends", "f"},
     permission = "ultisocial.use",
-    description = "好友系统"
+    description = "command_description"
 )
 public class FriendCommand extends BaseCommandExecutor {
     
@@ -42,6 +42,11 @@ public class FriendCommand extends BaseCommandExecutor {
     public FriendCommand(FriendService friendService, TeleportService teleportService) {
         this.friendService = friendService;
         this.teleportService = teleportService;
+    }
+
+    /** Catalogue text with its {@code &} colour codes applied. */
+    private String text(String catalogueText) {
+        return ChatColor.translateAlternateColorCodes('&', catalogueText);
     }
     
     // ==================== Friend Commands ====================
@@ -57,14 +62,14 @@ public class FriendCommand extends BaseCommandExecutor {
         List<FriendshipData> friends = friendService.getFriends(player.getUniqueId());
         
         if (friends.isEmpty()) {
-            player.sendMessage(ChatColor.YELLOW + "你还没有好友，使用 /friend add <玩家> 添加好友");
+            player.sendMessage(text(friendService.i18n("list_empty")));
             return;
         }
         
-        player.sendMessage(ChatColor.GOLD + "=== 好友列表 (" + friends.size() + ") ===");
+        player.sendMessage(text(friendService.i18n("list_header").replace("{COUNT}", String.valueOf(friends.size()))));
         for (FriendshipData friend : friends) {
             Player online = Bukkit.getPlayer(UUID.fromString(friend.getFriendUuid()));
-            String status = online != null ? ChatColor.GREEN + "● 在线" : ChatColor.GRAY + "○ 离线";
+            String status = online != null ? text(friendService.i18n("status_online")) : text(friendService.i18n("status_offline"));
             String star = friend.isFavorite() ? ChatColor.YELLOW + "★ " : "";
             player.sendMessage(star + status + " " + ChatColor.WHITE + friend.getFriendName());
         }
@@ -74,12 +79,12 @@ public class FriendCommand extends BaseCommandExecutor {
     public void addFriend(@CmdSender Player sender, @CmdParam("player") String targetName) {
         Player target = Bukkit.getPlayerExact(targetName);
         if (target == null) {
-            sender.sendMessage(ChatColor.RED + "玩家 " + targetName + " 不在线！");
+            sender.sendMessage(text(friendService.i18n("player_not_online")).replace("{PLAYER}", targetName));
             return;
         }
         
         if (target.equals(sender)) {
-            sender.sendMessage(ChatColor.RED + "不能添加自己为好友！");
+            sender.sendMessage(text(friendService.i18n("cannot_add_self")));
             return;
         }
         
@@ -106,14 +111,13 @@ public class FriendCommand extends BaseCommandExecutor {
         List<FriendRequest> requests = friendService.getPendingRequests(player.getUniqueId());
         
         if (requests.isEmpty()) {
-            player.sendMessage(ChatColor.YELLOW + "你没有待处理的好友请求");
+            player.sendMessage(text(friendService.i18n("requests_empty")));
             return;
         }
         
-        player.sendMessage(ChatColor.GOLD + "=== 好友请求 ===");
+        player.sendMessage(text(friendService.i18n("requests_header")));
         for (FriendRequest request : requests) {
-            player.sendMessage(ChatColor.YELLOW + "- " + ChatColor.WHITE + request.getSenderName() + 
-                ChatColor.GRAY + " (点击接受: /friend accept " + request.getSenderName() + ")");
+            player.sendMessage(text(friendService.i18n("requests_entry")).replace("{PLAYER}", request.getSenderName()));
         }
     }
     
@@ -122,7 +126,7 @@ public class FriendCommand extends BaseCommandExecutor {
     @CmdMapping(format = "tp <player>")
     public void teleportToFriend(@CmdSender Player player, @CmdParam("player") String friendName) {
         if (!friendService.getConfig().isTpToFriendEnabled()) {
-            player.sendMessage(ChatColor.RED + "传送到好友功能已禁用！");
+            player.sendMessage(text(friendService.i18n("tp_disabled")));
             return;
         }
         
@@ -136,19 +140,19 @@ public class FriendCommand extends BaseCommandExecutor {
         }
         
         if (targetFriend == null) {
-            player.sendMessage(ChatColor.RED + friendName + " 不是你的好友！");
+            player.sendMessage(text(friendService.i18n("not_friend")).replace("{PLAYER}", friendName));
             return;
         }
         
         Player target = Bukkit.getPlayer(UUID.fromString(targetFriend.getFriendUuid()));
         if (target == null) {
-            player.sendMessage(ChatColor.RED + friendName + " 不在线！");
+            player.sendMessage(text(friendService.i18n("friend_not_online")).replace("{PLAYER}", friendName));
             return;
         }
         
         if (!friendService.canTeleport(player.getUniqueId())) {
             int remaining = friendService.getRemainingCooldown(player.getUniqueId());
-            player.sendMessage(ChatColor.RED + "传送冷却中！请等待 " + remaining + " 秒");
+            player.sendMessage(text(friendService.i18n("tp_cooldown")).replace("{SECONDS}", String.valueOf(remaining)));
             return;
         }
         
@@ -160,7 +164,7 @@ public class FriendCommand extends BaseCommandExecutor {
         }
         
         friendService.setTpCooldown(player.getUniqueId());
-        player.sendMessage(ChatColor.GREEN + "已传送到 " + friendName + " 身边！");
+        player.sendMessage(text(friendService.i18n("tp_success")).replace("{PLAYER}", friendName));
     }
     
     // ==================== Message Commands ====================
@@ -179,13 +183,13 @@ public class FriendCommand extends BaseCommandExecutor {
         }
         
         if (targetFriend == null) {
-            sender.sendMessage(ChatColor.RED + friendName + " 不是你的好友！只能向好友发送私聊消息");
+            sender.sendMessage(text(friendService.i18n("msg_only_friend")).replace("{PLAYER}", friendName));
             return;
         }
         
         Player target = Bukkit.getPlayer(UUID.fromString(targetFriend.getFriendUuid()));
         if (target == null) {
-            sender.sendMessage(ChatColor.RED + friendName + " 不在线！");
+            sender.sendMessage(text(friendService.i18n("friend_not_online")).replace("{PLAYER}", friendName));
             return;
         }
         
@@ -193,17 +197,21 @@ public class FriendCommand extends BaseCommandExecutor {
 
         if (message.isEmpty() || message.chars()
                 .allMatch(c -> Character.isWhitespace(c) || Character.isSpaceChar(c))) {
-            sender.sendMessage(ChatColor.RED + "请输入要发送的消息！用法: /friend msg <好友> <消息>");
+            sender.sendMessage(text(friendService.i18n("msg_empty")));
             return;
         }
         
+        // The player's own words are appended after the catalogue text, never passed through it: a
+        // colour code or a placeholder-shaped token typed by a player stays exactly as typed.
+        String prefix = text(friendService.i18n("msg_prefix")) + " ";
+
         // Send to target
-        target.sendMessage(ChatColor.LIGHT_PURPLE + "[私聊] " + ChatColor.WHITE + sender.getName() + 
-            ChatColor.GRAY + " → " + ChatColor.WHITE + "你: " + ChatColor.RESET + message);
+        target.sendMessage(prefix + text(friendService.i18n("msg_received")).replace("{SENDER}", sender.getName())
+            + message);
         
         // Confirm to sender
-        sender.sendMessage(ChatColor.LIGHT_PURPLE + "[私聊] " + ChatColor.WHITE + "你" + 
-            ChatColor.GRAY + " → " + ChatColor.WHITE + target.getName() + ": " + ChatColor.RESET + message);
+        sender.sendMessage(prefix + text(friendService.i18n("msg_sent")).replace("{RECEIVER}", target.getName())
+            + message);
     }
     
     // ==================== Blacklist Commands ====================
@@ -216,40 +224,40 @@ public class FriendCommand extends BaseCommandExecutor {
             @SuppressWarnings("deprecation")
             org.bukkit.OfflinePlayer offline = Bukkit.getOfflinePlayer(targetName);
             if (!offline.hasPlayedBefore()) {
-                player.sendMessage(ChatColor.RED + "玩家 " + targetName + " 不存在！");
+                player.sendMessage(text(friendService.i18n("player_not_exist")).replace("{PLAYER}", targetName));
                 return;
             }
             
             if (friendService.addToBlacklist(player.getUniqueId(), offline.getUniqueId(), targetName, null)) {
-                player.sendMessage(ChatColor.RED + "已将 " + targetName + " 加入黑名单");
+                player.sendMessage(text(friendService.i18n("player_blocked")).replace("{PLAYER}", targetName));
             } else {
-                player.sendMessage(ChatColor.RED + targetName + " 已在黑名单中！");
+                player.sendMessage(text(friendService.i18n("already_blocked")).replace("{PLAYER}", targetName));
             }
             return;
         }
         
         if (target.equals(player)) {
-            player.sendMessage(ChatColor.RED + "不能拉黑自己！");
+            player.sendMessage(text(friendService.i18n("cannot_block_self")));
             return;
         }
         
         if (friendService.addToBlacklist(player, target, null)) {
-            player.sendMessage(ChatColor.RED + "已将 " + targetName + " 加入黑名单");
+            player.sendMessage(text(friendService.i18n("player_blocked")).replace("{PLAYER}", targetName));
             // Notify if they were friends
             if (friendService.areFriends(player.getUniqueId(), target.getUniqueId())) {
-                player.sendMessage(ChatColor.GRAY + "（已自动解除好友关系）");
+                player.sendMessage(text(friendService.i18n("auto_unfriend")));
             }
         } else {
-            player.sendMessage(ChatColor.RED + targetName + " 已在黑名单中！");
+            player.sendMessage(text(friendService.i18n("already_blocked")).replace("{PLAYER}", targetName));
         }
     }
     
     @CmdMapping(format = "unblock <player>")
     public void unblockPlayer(@CmdSender Player player, @CmdParam("player") String targetName) {
         if (friendService.removeFromBlacklist(player, targetName)) {
-            player.sendMessage(ChatColor.GREEN + "已将 " + targetName + " 从黑名单中移除");
+            player.sendMessage(text(friendService.i18n("player_unblocked")).replace("{PLAYER}", targetName));
         } else {
-            player.sendMessage(ChatColor.RED + targetName + " 不在你的黑名单中！");
+            player.sendMessage(text(friendService.i18n("not_in_blocklist")).replace("{PLAYER}", targetName));
         }
     }
     
@@ -263,20 +271,20 @@ public class FriendCommand extends BaseCommandExecutor {
     
     @CmdMapping(format = "help")
     public void help(@CmdSender Player player) {
-        player.sendMessage(ChatColor.GOLD + "=== 好友系统帮助 ===");
-        player.sendMessage(ChatColor.YELLOW + "/friend" + ChatColor.WHITE + " - 打开好友列表");
-        player.sendMessage(ChatColor.YELLOW + "/friend list" + ChatColor.WHITE + " - 列出所有好友");
-        player.sendMessage(ChatColor.YELLOW + "/friend add <玩家>" + ChatColor.WHITE + " - 发送好友请求");
-        player.sendMessage(ChatColor.YELLOW + "/friend accept <玩家>" + ChatColor.WHITE + " - 接受好友请求");
-        player.sendMessage(ChatColor.YELLOW + "/friend deny <玩家>" + ChatColor.WHITE + " - 拒绝好友请求");
-        player.sendMessage(ChatColor.YELLOW + "/friend remove <玩家>" + ChatColor.WHITE + " - 删除好友");
-        player.sendMessage(ChatColor.YELLOW + "/friend tp <好友>" + ChatColor.WHITE + " - 传送到好友");
-        player.sendMessage(ChatColor.YELLOW + "/friend msg <好友> <消息>" + ChatColor.WHITE + " - 私聊好友");
-        player.sendMessage(ChatColor.YELLOW + "/friend requests" + ChatColor.WHITE + " - 查看待处理请求");
-        player.sendMessage(ChatColor.GOLD + "=== 黑名单功能 ===");
-        player.sendMessage(ChatColor.YELLOW + "/friend block <玩家>" + ChatColor.WHITE + " - 拉黑玩家");
-        player.sendMessage(ChatColor.YELLOW + "/friend unblock <玩家>" + ChatColor.WHITE + " - 解除拉黑");
-        player.sendMessage(ChatColor.YELLOW + "/friend blocklist" + ChatColor.WHITE + " - 查看黑名单");
+        player.sendMessage(text(friendService.i18n("help_title")));
+        player.sendMessage(text(friendService.i18n("help_friend")));
+        player.sendMessage(text(friendService.i18n("help_list")));
+        player.sendMessage(text(friendService.i18n("help_add")));
+        player.sendMessage(text(friendService.i18n("help_accept")));
+        player.sendMessage(text(friendService.i18n("help_deny")));
+        player.sendMessage(text(friendService.i18n("help_remove")));
+        player.sendMessage(text(friendService.i18n("help_tp")));
+        player.sendMessage(text(friendService.i18n("help_msg")));
+        player.sendMessage(text(friendService.i18n("help_requests")));
+        player.sendMessage(text(friendService.i18n("help_block_title")));
+        player.sendMessage(text(friendService.i18n("help_block")));
+        player.sendMessage(text(friendService.i18n("help_unblock")));
+        player.sendMessage(text(friendService.i18n("help_blocklist")));
     }
     
     @Override

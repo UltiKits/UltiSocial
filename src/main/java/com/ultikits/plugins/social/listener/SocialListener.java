@@ -40,6 +40,11 @@ public class SocialListener implements Listener {
     @Autowired(required = false)
     private TeleportService teleportService;
     
+    /** Catalogue text with its {@code &} colour codes applied. */
+    private static String text(String catalogueText) {
+        return ChatColor.translateAlternateColorCodes('&', catalogueText);
+    }
+
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
@@ -150,13 +155,13 @@ public class SocialListener implements Listener {
                     // Shift+Left: Toggle favorite
                     friendService.toggleFavorite(player.getUniqueId(), friend.getFriendName());
                     gui.refresh();
-                    player.sendMessage(ChatColor.GREEN + "已更新好友收藏状态！");
+                    player.sendMessage(text(friendService.i18n("favorite_updated")));
                 } else {
                     // Left: Teleport to friend (if online)
                     if (online && friendService.getConfig().isTpToFriendEnabled()) {
                         if (!friendService.canTeleport(player.getUniqueId())) {
                             int remaining = friendService.getRemainingCooldown(player.getUniqueId());
-                            player.sendMessage(ChatColor.RED + "传送冷却中！请等待 " + remaining + " 秒");
+                            player.sendMessage(text(friendService.i18n("tp_cooldown")).replace("{SECONDS}", String.valueOf(remaining)));
                         } else {
                             player.closeInventory();
                             // Use TeleportService if available
@@ -166,10 +171,10 @@ public class SocialListener implements Listener {
                                 player.teleport(target.getLocation());
                             }
                             friendService.setTpCooldown(player.getUniqueId());
-                            player.sendMessage(ChatColor.GREEN + "已传送到 " + friend.getFriendName() + " 身边！");
+                            player.sendMessage(text(friendService.i18n("tp_success")).replace("{PLAYER}", friend.getFriendName()));
                         }
                     } else if (!online) {
-                        player.sendMessage(ChatColor.RED + friend.getFriendName() + " 不在线！");
+                        player.sendMessage(text(friendService.i18n("friend_not_online")).replace("{PLAYER}", friend.getFriendName()));
                     }
                 }
             } else if (event.isRightClick()) {
@@ -181,8 +186,7 @@ public class SocialListener implements Listener {
                     // Right: Send message (if online) or delete (if offline)
                     if (online) {
                         player.closeInventory();
-                        player.sendMessage(ChatColor.YELLOW + "请使用命令发送私聊: " + 
-                            ChatColor.WHITE + "/friend msg " + friend.getFriendName() + " <消息>");
+                        player.sendMessage(text(friendService.i18n("msg_use_command")).replace("{PLAYER}", friend.getFriendName()));
                     } else {
                         // Offline - delete friend
                         player.closeInventory();
@@ -227,10 +231,10 @@ public class SocialListener implements Listener {
             if (event.isLeftClick()) {
                 // Unblock
                 if (friendService.removeFromBlacklist(player, blocked.getBlockedName())) {
-                    player.sendMessage(ChatColor.GREEN + "已将 " + blocked.getBlockedName() + " 从黑名单移除");
+                    player.sendMessage(text(friendService.i18n("player_unblocked")).replace("{PLAYER}", blocked.getBlockedName()));
                     gui.refresh();
                 } else {
-                    player.sendMessage(ChatColor.RED + "解除拉黑失败！");
+                    player.sendMessage(text(friendService.i18n("unblock_failed")));
                 }
             }
         }
