@@ -44,6 +44,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Blocking a friend with `/friend block <player>` now also says that the friendship was removed
+  ("(Friend relationship has been automatically removed)"), for an online or an offline player. The
+  command asked whether the two were friends only after the block had already removed the friendship,
+  so the line never sent (UltiKits/UltiSocial#17).
+- 用 `/friend block <玩家>` 拉黑好友时，现在会另外提示好友关系已被自动解除（对在线和离线玩家都有效）。此前命令在拉黑已经
+  解除好友关系之后才判断两人是否为好友，所以这行提示从不发送（UltiKits/UltiSocial#17）。
+
 - `language: en` now applies to everything this module shows or logs: every `/friend` reply and the
   help, both GUIs (titles, lore, game-mode names, click tips, buttons), the replies to GUI clicks, the
   command description, and the console lines. Most of this was fixed Chinese text in every language,
