@@ -1438,4 +1438,53 @@ class FriendServiceTest {
      */
     private static class ConcurrentHashMapWrapper<K, V> extends java.util.concurrent.ConcurrentHashMap<K, V> {
     }
+
+    // ==================== per-player cooldown table ====================
+
+    @Nested
+    @DisplayName("the teleport cooldown table drops expired entries, and the cooldown behaves as before")
+    class TeleportCooldownEviction {
+
+        @SuppressWarnings("unchecked")
+        private Map<UUID, Long> table() throws Exception {
+            java.lang.reflect.Field field = FriendService.class.getDeclaredField("tpCooldowns");
+            field.setAccessible(true);
+            return (Map<UUID, Long>) field.get(service);
+        }
+
+        @Test
+        @DisplayName("setting a cooldown drops every entry whose cooldown has run out")
+        void newCooldownSweepsExpired() throws Exception {
+            when(config.getTpCooldown()).thenReturn(30);
+            UUID expired = UUID.randomUUID();
+            UUID cooling = UUID.randomUUID();
+            table().put(expired, System.currentTimeMillis() - 31_000L);
+            table().put(cooling, System.currentTimeMillis() - 5_000L);
+
+            service.setTpCooldown(playerUuid);
+
+            assertThat(table()).containsOnlyKeys(cooling, playerUuid);
+        }
+
+        @Test
+        @DisplayName("reading an expired entry drops it and allows the teleport")
+        void readingExpiredDropsIt() throws Exception {
+            when(config.getTpCooldown()).thenReturn(30);
+            table().put(playerUuid, System.currentTimeMillis() - 31_000L);
+
+            assertThat(service.canTeleport(playerUuid)).isTrue();
+            assertThat(table()).doesNotContainKey(playerUuid);
+        }
+
+        @Test
+        @DisplayName("an entry still cooling down stays and still blocks the teleport")
+        void coolingEntryStays() throws Exception {
+            when(config.getTpCooldown()).thenReturn(30);
+            table().put(playerUuid, System.currentTimeMillis() - 5_000L);
+
+            assertThat(service.canTeleport(playerUuid)).isFalse();
+            assertThat(service.getRemainingCooldown(playerUuid)).isBetween(24, 25);
+            assertThat(table()).containsKey(playerUuid);
+        }
+    }
 }
