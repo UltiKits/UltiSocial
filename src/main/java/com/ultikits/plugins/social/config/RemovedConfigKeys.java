@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import com.ultikits.plugins.social.util.Placeholders;
 import com.ultikits.ultitools.abstracts.UltiToolsPlugin;
 
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -100,10 +101,11 @@ public final class RemovedConfigKeys {
                 // No "[UltiSocial]" prefix: the module logger adds that itself, and the module is
                 // still named in the sentence for any consumer that does not.
                 String reason = reasonFor(entry.getKey(), plugin);
-                warn.accept(plugin.i18n("removed_key_warning")
-                        .replace("{FILE}", configFile.getPath())
-                        .replace("{KEY}", entry.getKey())
-                        .replace("{REASON}", reason));
+                // One pass: a path containing a later token is printed as written
+                warn.accept(Placeholders.fill(plugin.i18n("removed_key_warning"),
+                        "{FILE}", configFile.getPath(),
+                        "{KEY}", entry.getKey(),
+                        "{REASON}", reason));
             }
         }
     }

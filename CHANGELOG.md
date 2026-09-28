@@ -44,6 +44,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The warning about a key this version no longer reads now prints the configuration file's path exactly
+  as it is. A path containing `{KEY}` or `{REASON}` was rewritten by the placeholders filled after it.
+- 关于本版本已不再读取的配置键的警告，现在会原样打印配置文件路径。此前路径中若含有 `{KEY}` 或 `{REASON}`，
+  会被随后填入的占位符改写。
+
 - The README's configuration example now names the real file, `config/social.yml`, with its real keys
   (`max_friends`, `request_timeout`, `notifications.*`, `tp_to_friend.*`, `gui_title`, `messages.*`)
   and defaults (`tp_to_friend.cooldown` is 30). It named `config/social_config.yml` and Java field
