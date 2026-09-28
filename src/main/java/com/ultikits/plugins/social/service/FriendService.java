@@ -387,30 +387,47 @@ public class FriendService {
      * Check teleport cooldown.
      */
     public boolean canTeleport(UUID playerUuid) {
-        Long lastTp = tpCooldowns.get(playerUuid);
-        if (lastTp == null) {
-            return true;
-        }
-        return System.currentTimeMillis() - lastTp > config.getTpCooldown() * 1000L;
+        return lastTeleportStillCooling(playerUuid) == null;
     }
     
     /**
-     * Set teleport cooldown.
+     * Set teleport cooldown, dropping every entry whose cooldown has run out, so the table holds only
+     * players still cooling down (maintainer decision 2026-09-27: expired entries are removed and the
+     * cooldown itself behaves as before; a reconnect does not reset it).
      */
     public void setTpCooldown(UUID playerUuid) {
-        tpCooldowns.put(playerUuid, System.currentTimeMillis());
+        long now = System.currentTimeMillis();
+        long cooldownMillis = config.getTpCooldown() * 1000L;
+        tpCooldowns.values().removeIf(lastTp -> now - lastTp > cooldownMillis);
+        tpCooldowns.put(playerUuid, now);
     }
     
     /**
      * Get remaining cooldown in seconds.
      */
     public int getRemainingCooldown(UUID playerUuid) {
-        Long lastTp = tpCooldowns.get(playerUuid);
+        Long lastTp = lastTeleportStillCooling(playerUuid);
         if (lastTp == null) {
             return 0;
         }
         long remaining = (config.getTpCooldown() * 1000L) - (System.currentTimeMillis() - lastTp);
         return Math.max(0, (int) (remaining / 1000));
+    }
+
+    /**
+     * The player's last teleport time while its cooldown is still running, or {@code null}; an entry
+     * whose cooldown has run out is dropped when it is read.
+     */
+    private Long lastTeleportStillCooling(UUID playerUuid) {
+        Long lastTp = tpCooldowns.get(playerUuid);
+        if (lastTp == null) {
+            return null;
+        }
+        if (System.currentTimeMillis() - lastTp > config.getTpCooldown() * 1000L) {
+            tpCooldowns.remove(playerUuid, lastTp);
+            return null;
+        }
+        return lastTp;
     }
     
     /**
