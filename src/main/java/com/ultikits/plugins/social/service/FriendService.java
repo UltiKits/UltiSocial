@@ -391,16 +391,20 @@ public class FriendService {
     }
     
     /**
-     * Set teleport cooldown, dropping every entry whose cooldown has run out, so the table holds only
-     * players still cooling down (maintainer decision 2026-09-27: expired entries are removed and the
-     * cooldown itself behaves as before; a reconnect does not reset it).
+     * Set teleport cooldown, dropping every entry that no cooldown the setting allows could still
+     * reach, so the table holds only players who teleported within the longest allowed cooldown
+     * (maintainer decision 2026-09-27: expired entries are removed and the cooldown itself behaves as
+     * before; a reconnect does not reset it). An entry past the current cooldown is kept: raising
+     * {@code tp_to_friend.cooldown} and reloading makes it count again, as it always did.
      */
     public void setTpCooldown(UUID playerUuid) {
         long now = System.currentTimeMillis();
-        long cooldownMillis = config.getTpCooldown() * 1000L;
-        tpCooldowns.values().removeIf(lastTp -> now - lastTp > cooldownMillis);
+        tpCooldowns.values().removeIf(lastTp -> now - lastTp > LONGEST_COOLDOWN_MILLIS);
         tpCooldowns.put(playerUuid, now);
     }
+
+    /** An entry older than this cannot block a teleport under any valid {@code tp_to_friend.cooldown}. */
+    private static final long LONGEST_COOLDOWN_MILLIS = SocialConfig.MAX_TP_COOLDOWN_SECONDS * 1000L;
     
     /**
      * Get remaining cooldown in seconds.
@@ -415,19 +419,21 @@ public class FriendService {
     }
 
     /**
-     * The player's last teleport time while its cooldown is still running, or {@code null}; an entry
-     * whose cooldown has run out is dropped when it is read.
+     * The player's last teleport time while its cooldown is still running, or {@code null}. An entry
+     * that no allowed cooldown could reach is dropped when it is read; one merely past the current
+     * cooldown is kept, since a raised cooldown makes it count again.
      */
     private Long lastTeleportStillCooling(UUID playerUuid) {
         Long lastTp = tpCooldowns.get(playerUuid);
         if (lastTp == null) {
             return null;
         }
-        if (System.currentTimeMillis() - lastTp > config.getTpCooldown() * 1000L) {
+        long elapsed = System.currentTimeMillis() - lastTp;
+        if (elapsed > LONGEST_COOLDOWN_MILLIS) {
             tpCooldowns.remove(playerUuid, lastTp);
             return null;
         }
-        return lastTp;
+        return elapsed > config.getTpCooldown() * 1000L ? null : lastTp;
     }
     
     /**
