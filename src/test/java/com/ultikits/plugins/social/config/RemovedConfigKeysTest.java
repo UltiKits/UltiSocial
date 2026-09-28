@@ -164,4 +164,18 @@ class RemovedConfigKeysTest {
                         "messages.player_unblocked")
                 .doesNotContainAnyElementsOf(declared);
     }
+
+    @Test
+    @DisplayName("a file path containing {KEY} and {REASON} is printed exactly as it is (placeholders filled in one pass)")
+    void pathIsNotExpandedAgain(@TempDir File tmp) throws IOException {
+        File dir = new File(tmp, "srv-{KEY}-{REASON}");
+        assertThat(dir.mkdirs()).isTrue();
+        File file = write(dir, FILE_WITH_THE_REMOVED_KEY);
+        List<String> warnings = new ArrayList<String>();
+
+        SocialSeams.warnAboutLeftovers(file, warnings::add, ENGLISH);
+
+        assertThat(warnings).hasSize(1);
+        assertThat(warnings.get(0)).contains(file.getPath()).contains("'notifications.friend_join_world'");
+    }
 }
