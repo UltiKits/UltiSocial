@@ -1438,4 +1438,67 @@ class FriendServiceTest {
      */
     private static class ConcurrentHashMapWrapper<K, V> extends java.util.concurrent.ConcurrentHashMap<K, V> {
     }
+
+    // ==================== per-player cooldown table ====================
+
+    @Nested
+    @DisplayName("the teleport cooldown table drops entries no allowed cooldown can reach, and the cooldown behaves as before")
+    class TeleportCooldownEviction {
+
+        @SuppressWarnings("unchecked")
+        private Map<UUID, Long> table() throws Exception {
+            java.lang.reflect.Field field = FriendService.class.getDeclaredField("tpCooldowns");
+            field.setAccessible(true);
+            return (Map<UUID, Long>) field.get(service);
+        }
+
+        @Test
+        @DisplayName("setting a cooldown drops every entry older than the longest cooldown the setting allows")
+        void newCooldownSweepsEntriesNoCooldownCanReach() throws Exception {
+            when(config.getTpCooldown()).thenReturn(30);
+            UUID ancient = UUID.randomUUID();
+            UUID recent = UUID.randomUUID();
+            table().put(ancient, System.currentTimeMillis() - 3_601_000L);
+            table().put(recent, System.currentTimeMillis() - 31_000L);
+
+            service.setTpCooldown(playerUuid);
+
+            assertThat(table()).containsOnlyKeys(recent, playerUuid);
+        }
+
+        @Test
+        @DisplayName("an entry past the current cooldown still counts again after the cooldown is raised")
+        void raisingTheCooldownStillCountsARecentTeleport() throws Exception {
+            when(config.getTpCooldown()).thenReturn(30);
+            table().put(playerUuid, System.currentTimeMillis() - 31_000L);
+            assertThat(service.canTeleport(playerUuid)).isTrue();
+
+            // the operator raises tp_to_friend.cooldown and reloads
+            when(config.getTpCooldown()).thenReturn(60);
+
+            assertThat(service.canTeleport(playerUuid)).isFalse();
+            assertThat(service.getRemainingCooldown(playerUuid)).isBetween(28, 29);
+        }
+
+        @Test
+        @DisplayName("reading an entry older than the longest allowed cooldown drops it")
+        void readingAnUnreachableEntryDropsIt() throws Exception {
+            when(config.getTpCooldown()).thenReturn(30);
+            table().put(playerUuid, System.currentTimeMillis() - 3_601_000L);
+
+            assertThat(service.canTeleport(playerUuid)).isTrue();
+            assertThat(table()).doesNotContainKey(playerUuid);
+        }
+
+        @Test
+        @DisplayName("an entry still cooling down stays and still blocks the teleport")
+        void coolingEntryStays() throws Exception {
+            when(config.getTpCooldown()).thenReturn(30);
+            table().put(playerUuid, System.currentTimeMillis() - 5_000L);
+
+            assertThat(service.canTeleport(playerUuid)).isFalse();
+            assertThat(service.getRemainingCooldown(playerUuid)).isBetween(24, 25);
+            assertThat(table()).containsKey(playerUuid);
+        }
+    }
 }

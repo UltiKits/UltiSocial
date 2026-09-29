@@ -1230,4 +1230,95 @@ class FriendCommandTest {
             assertThat(result).containsExactly("Add");
         }
     }
+
+    // ==================== UltiKits/UltiSocial#17 ====================
+
+    @Nested
+    @DisplayName("blocking a friend says the friendship was removed (UltiKits/UltiSocial#17)")
+    class BlockEndsFriendship {
+
+        /** Friendship as the real service keeps it: true until addToBlacklist removes it. */
+        private final java.util.concurrent.atomic.AtomicBoolean friends =
+                new java.util.concurrent.atomic.AtomicBoolean();
+
+        private List<String> sent() {
+            ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+            verify(player, atLeastOnce()).sendMessage(captor.capture());
+            return captor.getAllValues();
+        }
+
+        private boolean saysUnfriended() {
+            return sent().stream().anyMatch(msg -> msg.contains("自动解除好友"));
+        }
+
+        @Test
+        @DisplayName("an online friend: the unfriend line is sent")
+        void onlineFriend() {
+            friends.set(true);
+            when(friendService.areFriends(playerUuid, targetUuid)).thenAnswer(i -> friends.get());
+            when(friendService.addToBlacklist(player, target, null)).thenAnswer(i -> {
+                friends.set(false);
+                return true;
+            });
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayerExact("TargetPlayer")).thenReturn(target);
+                command.blockPlayer(player, "TargetPlayer");
+            }
+
+            assertThat(saysUnfriended()).isTrue();
+        }
+
+        @Test
+        @DisplayName("an online player who was not a friend: no unfriend line")
+        void onlineStranger() {
+            when(friendService.areFriends(playerUuid, targetUuid)).thenAnswer(i -> friends.get());
+            when(friendService.addToBlacklist(player, target, null)).thenReturn(true);
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayerExact("TargetPlayer")).thenReturn(target);
+                command.blockPlayer(player, "TargetPlayer");
+            }
+
+            assertThat(saysUnfriended()).isFalse();
+        }
+
+        @Test
+        @DisplayName("an offline friend: the unfriend line is sent too")
+        void offlineFriend() {
+            OfflinePlayer offlineTarget = mock(OfflinePlayer.class);
+            UUID offlineUuid = UUID.randomUUID();
+            when(offlineTarget.hasPlayedBefore()).thenReturn(true);
+            when(offlineTarget.getUniqueId()).thenReturn(offlineUuid);
+            friends.set(true);
+            when(friendService.areFriends(playerUuid, offlineUuid)).thenAnswer(i -> friends.get());
+            when(friendService.addToBlacklist(playerUuid, offlineUuid, "OfflineFriend", null)).thenAnswer(i -> {
+                friends.set(false);
+                return true;
+            });
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayerExact("OfflineFriend")).thenReturn(null);
+                bukkitMock.when(() -> Bukkit.getOfflinePlayer("OfflineFriend")).thenReturn(offlineTarget);
+                command.blockPlayer(player, "OfflineFriend");
+            }
+
+            assertThat(saysUnfriended()).isTrue();
+        }
+
+        @Test
+        @DisplayName("already blocked: no unfriend line, whatever the friendship said")
+        void alreadyBlocked() {
+            friends.set(true);
+            when(friendService.areFriends(playerUuid, targetUuid)).thenAnswer(i -> friends.get());
+            when(friendService.addToBlacklist(player, target, null)).thenReturn(false);
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayerExact("TargetPlayer")).thenReturn(target);
+                command.blockPlayer(player, "TargetPlayer");
+            }
+
+            assertThat(saysUnfriended()).isFalse();
+        }
+    }
 }

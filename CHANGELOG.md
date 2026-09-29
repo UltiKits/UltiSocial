@@ -44,6 +44,26 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The warning about a key this version no longer reads now prints the configuration file's path exactly
+  as it is. A path containing `{KEY}` or `{REASON}` was rewritten by the placeholders filled after it.
+- 关于本版本已不再读取的配置键的警告，现在会原样打印配置文件路径。此前路径中若含有 `{KEY}` 或 `{REASON}`，
+  会被随后填入的占位符改写。
+
+- The README's configuration example now names the real file, `config/social.yml`, with its real keys
+  (`max_friends`, `request_timeout`, `notifications.*`, `tp_to_friend.*`, `gui_title`, `messages.*`)
+  and defaults (`tp_to_friend.cooldown` is 30). It named `config/social_config.yml` and Java field
+  names that nothing reads (UltiKits/UltiSocial#22).
+- README 中的配置示例现在写明实际的文件 `config/social.yml`、实际的键名（`max_friends`、`request_timeout`、`notifications.*`、
+  `tp_to_friend.*`、`gui_title`、`messages.*`）与默认值（`tp_to_friend.cooldown` 为 30）。此前它写的是
+  `config/social_config.yml` 和任何代码都不读取的 Java 字段名（UltiKits/UltiSocial#22）。
+
+- Blocking a friend with `/friend block <player>` now also says that the friendship was removed
+  ("(Friend relationship has been automatically removed)"), for an online or an offline player. The
+  command asked whether the two were friends only after the block had already removed the friendship,
+  so the line never sent (UltiKits/UltiSocial#17).
+- 用 `/friend block <玩家>` 拉黑好友时，现在会另外提示好友关系已被自动解除（对在线和离线玩家都有效）。此前命令在拉黑已经
+  解除好友关系之后才判断两人是否为好友，所以这行提示从不发送（UltiKits/UltiSocial#17）。
+
 - `language: en` now applies to everything this module shows or logs: every `/friend` reply and the
   help, both GUIs (titles, lore, game-mode names, click tips, buttons), the replies to GUI clicks, the
   command description, and the console lines. Most of this was fixed Chinese text in every language,

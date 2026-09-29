@@ -77,31 +77,40 @@ UltiSocial 是一个基于 UltiTools-API 框架开发的 Minecraft 好友系统�
 ## ⚙️ 配置文件
 
 ```yaml
-# config/social_config.yml
+# config/social.yml
 
-# 最大好友数量
-maxFriends: 50
+# Maximum number of friends per player (1-500) / 每位玩家的最大好友数量（1-500）
+max_friends: 50
 
-# 是否启用好友传送功能
-enableTeleport: true
+# Friend request timeout in seconds (10-3600) / 好友请求超时时间（秒，10-3600）
+request_timeout: 60
 
-# 传送冷却时间（秒）
-teleportCooldown: 60
+# Notify when a friend comes online / goes offline / 好友上线、下线时通知
+notifications:
+  friend_online: true
+  friend_offline: true
 
-# 上线通知消息
-onlineMessage: "&a你的好友 {PLAYER} 上线了！"
+# Teleporting to friends / 传送到好友
+tp_to_friend:
+  enabled: true
+  # Cooldown in seconds (0-3600) / 冷却时间（秒，0-3600）
+  cooldown: 30
 
-# 下线通知消息
-offlineMessage: "&7你的好友 {PLAYER} 下线了"
-
-# 黑名单提示消息
-blockedMessage: "&c无法与 {PLAYER} 进行好友操作，因为存在黑名单关系"
-
-# 拉黑成功消息
-playerBlockedMessage: "&c已将 {PLAYER} 加入黑名单"
-
-# 解除拉黑消息
-playerUnblockedMessage: "&a已将 {PLAYER} 从黑名单移除"
+# The friend-list title and the messages below are written in the server's language at start-up
+# while they still hold built-in text; a value you edit is kept.
+# 好友列表标题和以下消息在仍为内置文本时，会在启动时按服务器语言写入；你改过的值会保留。
+gui_title: "&6好友列表 &7({COUNT}/{MAX})"
+messages:
+  friend_added: "&a你和 {PLAYER} 成为了好友！"
+  friend_removed: "&c你已删除好友 {PLAYER}"
+  friend_online: "&a你的好友 {PLAYER} 上线了！"
+  friend_offline: "&7你的好友 {PLAYER} 下线了"
+  request_sent: "&a已向 {PLAYER} 发送好友请求！"
+  request_received: "&e{PLAYER} 想和你成为好友！输入 /friend accept {PLAYER} 接受"
+  request_denied: "&c已拒绝 {PLAYER} 的好友请求"
+  max_friends_reached: "&c你的好友数量已达上限！"
+  already_friends: "&c你已经和 {PLAYER} 是好友了！"
+  blocked: "&c无法与 {PLAYER} 进行好友操作，因为存在黑名单关系"
 ```
 
 ## 🗄️ 数据存储
@@ -264,9 +273,9 @@ teleportService.teleport(player, targetPlayer.getLocation());
   - 好友请求过期清理改为 `@Scheduled(period = 1200, async = true)`
   - 自动生命周期管理，无需手动取消
 - 🚀 **配置验证**: 添加 `@Range` 和 `@NotEmpty` 注解
-  - `maxFriends`: 1-500 范围验证
-  - `requestTimeout`: 10-3600 秒范围验证
-  - `tpCooldown`: 0-3600 秒范围验证
+  - `max_friends`: 1-500 范围验证
+  - `request_timeout`: 10-3600 秒范围验证
+  - `tp_to_friend.cooldown`: 0-3600 秒范围验证
   - 所有消息字段添加 `@NotEmpty` 验证
 - 🚀 **现代基类**: 迁移到新的基类
   - `FriendshipData` / `BlacklistData`: `AbstractDataEntity` → `BaseDataEntity<String>`

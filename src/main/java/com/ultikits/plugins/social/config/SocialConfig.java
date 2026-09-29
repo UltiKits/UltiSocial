@@ -41,7 +41,13 @@ public class SocialConfig extends AbstractConfigEntity {
     @ConfigEntry(path = "tp_to_friend.enabled", comment = "Allow teleporting to friends")
     private boolean tpToFriendEnabled = true;
 
-    @Range(min = 0, max = 3600)
+    /**
+     * The longest teleport cooldown the setting accepts, in seconds. A cooldown entry older than this
+     * cannot matter under any valid setting, which is what lets the service drop it.
+     */
+    public static final int MAX_TP_COOLDOWN_SECONDS = 3600;
+
+    @Range(min = 0, max = MAX_TP_COOLDOWN_SECONDS)
     @ConfigEntry(path = "tp_to_friend.cooldown", comment = "Teleport cooldown in seconds")
     private int tpCooldown = 30;
     

@@ -228,8 +228,13 @@ public class FriendCommand extends BaseCommandExecutor {
                 return;
             }
             
+            // Read before blocking: blocking removes the friendship (UltiKits/UltiSocial#17)
+            boolean wereFriends = friendService.areFriends(player.getUniqueId(), offline.getUniqueId());
             if (friendService.addToBlacklist(player.getUniqueId(), offline.getUniqueId(), targetName, null)) {
                 player.sendMessage(text(friendService.i18n("player_blocked")).replace("{PLAYER}", targetName));
+                if (wereFriends) {
+                    player.sendMessage(text(friendService.i18n("auto_unfriend")));
+                }
             } else {
                 player.sendMessage(text(friendService.i18n("already_blocked")).replace("{PLAYER}", targetName));
             }
@@ -241,10 +246,12 @@ public class FriendCommand extends BaseCommandExecutor {
             return;
         }
         
+        // Read before blocking: blocking removes the friendship, so asking afterwards always
+        // answered false and the line below never sent (UltiKits/UltiSocial#17)
+        boolean wereFriends = friendService.areFriends(player.getUniqueId(), target.getUniqueId());
         if (friendService.addToBlacklist(player, target, null)) {
             player.sendMessage(text(friendService.i18n("player_blocked")).replace("{PLAYER}", targetName));
-            // Notify if they were friends
-            if (friendService.areFriends(player.getUniqueId(), target.getUniqueId())) {
+            if (wereFriends) {
                 player.sendMessage(text(friendService.i18n("auto_unfriend")));
             }
         } else {
