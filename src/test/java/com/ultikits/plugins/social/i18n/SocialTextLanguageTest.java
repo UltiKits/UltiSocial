@@ -442,7 +442,17 @@ class SocialTextLanguageTest {
             when(gui.getFriendAtSlot(5)).thenReturn(friend(bob, "Bob"));
             Player online = mock(Player.class);
             when(online.getLocation()).thenReturn(mock(Location.class));
+            // closing the menu and what follows run in a scheduler task (UltiKits/UltiSocial#30); run it at once here
+            org.bukkit.plugin.PluginManager pluginManager = mock(org.bukkit.plugin.PluginManager.class);
+            when(pluginManager.getPlugin("UltiTools")).thenReturn(mock(org.bukkit.plugin.Plugin.class));
+            org.bukkit.scheduler.BukkitScheduler scheduler = mock(org.bukkit.scheduler.BukkitScheduler.class);
+            when(scheduler.runTask(any(org.bukkit.plugin.Plugin.class), any(Runnable.class))).thenAnswer(inv -> {
+                ((Runnable) inv.getArgument(1)).run();
+                return null;
+            });
             try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+                bukkit.when(Bukkit::getPluginManager).thenReturn(pluginManager);
+                bukkit.when(Bukkit::getScheduler).thenReturn(scheduler);
                 bukkit.when(() -> Bukkit.getPlayer(bob)).thenReturn(online);
                 listener.onInventoryClick(click(gui, 5, ClickType.SHIFT_LEFT));
                 when(service.canTeleport(playerUuid)).thenReturn(false);

@@ -40,6 +40,16 @@ public class SocialListener implements Listener {
     @Autowired(required = false)
     private TeleportService teleportService;
     
+    /**
+     * Runs {@code task} on the next tick. Paper forbids changing the player's view (closing or opening an
+     * inventory) from inside an {@code InventoryClickEvent} handler (see that event's javadoc), and the
+     * framework runs a command body at the moment it is dispatched, so every close, open and command a
+     * click causes, together with what follows it, goes through here.
+     */
+    private static void afterClick(Runnable task) {
+        Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("UltiTools"), task);
+    }
+
     /** Catalogue text with its {@code &} colour codes applied. */
     private static String text(String catalogueText) {
         return ChatColor.translateAlternateColorCodes('&', catalogueText);
@@ -137,8 +147,10 @@ public class SocialListener implements Listener {
             return;
         }
         if (slot == 47) { // Pending requests
-            player.closeInventory();
-            player.performCommand("friend requests");
+            afterClick(() -> {
+                player.closeInventory();
+                player.performCommand("friend requests");
+            });
             return;
         }
         
@@ -163,15 +175,22 @@ public class SocialListener implements Listener {
                             int remaining = friendService.getRemainingCooldown(player.getUniqueId());
                             player.sendMessage(text(friendService.i18n("tp_cooldown")).replace("{SECONDS}", String.valueOf(remaining)));
                         } else {
-                            player.closeInventory();
-                            // Use TeleportService if available
-                            if (teleportService != null) {
-                                teleportService.teleport(player, target.getLocation());
-                            } else {
-                                player.teleport(target.getLocation());
-                            }
-                            friendService.setTpCooldown(player.getUniqueId());
-                            player.sendMessage(text(friendService.i18n("tp_success")).replace("{PLAYER}", friend.getFriendName()));
+                            afterClick(() -> {
+                                // Two clicks in one tick both passed the check above before either task
+                                // ran; the cooldown the first task sets must stop the second.
+                                if (!friendService.canTeleport(player.getUniqueId())) {
+                                    return;
+                                }
+                                player.closeInventory();
+                                // Use TeleportService if available
+                                if (teleportService != null) {
+                                    teleportService.teleport(player, target.getLocation());
+                                } else {
+                                    player.teleport(target.getLocation());
+                                }
+                                friendService.setTpCooldown(player.getUniqueId());
+                                player.sendMessage(text(friendService.i18n("tp_success")).replace("{PLAYER}", friend.getFriendName()));
+                            });
                         }
                     } else if (!online) {
                         player.sendMessage(text(friendService.i18n("friend_not_online")).replace("{PLAYER}", friend.getFriendName()));
@@ -180,17 +199,23 @@ public class SocialListener implements Listener {
             } else if (event.isRightClick()) {
                 if (event.isShiftClick()) {
                     // Shift+Right: Delete friend
-                    player.closeInventory();
-                    friendService.removeFriend(player, friend.getFriendName());
+                    afterClick(() -> {
+                        player.closeInventory();
+                        friendService.removeFriend(player, friend.getFriendName());
+                    });
                 } else {
                     // Right: Send message (if online) or delete (if offline)
                     if (online) {
-                        player.closeInventory();
-                        player.sendMessage(text(friendService.i18n("msg_use_command")).replace("{PLAYER}", friend.getFriendName()));
+                        afterClick(() -> {
+                            player.closeInventory();
+                            player.sendMessage(text(friendService.i18n("msg_use_command")).replace("{PLAYER}", friend.getFriendName()));
+                        });
                     } else {
                         // Offline - delete friend
-                        player.closeInventory();
-                        friendService.removeFriend(player, friend.getFriendName());
+                        afterClick(() -> {
+                            player.closeInventory();
+                            friendService.removeFriend(player, friend.getFriendName());
+                        });
                     }
                 }
             }
@@ -217,9 +242,11 @@ public class SocialListener implements Listener {
             return;
         }
         if (slot == 47) { // Back to friend list
-            player.closeInventory();
-            FriendListGUI friendGui = new FriendListGUI(friendService, player);
-            player.openInventory(friendGui.getInventory());
+            afterClick(() -> {
+                player.closeInventory();
+                FriendListGUI friendGui = new FriendListGUI(friendService, player);
+                player.openInventory(friendGui.getInventory());
+            });
             return;
         }
         

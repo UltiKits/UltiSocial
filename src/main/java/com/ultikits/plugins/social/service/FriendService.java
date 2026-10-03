@@ -9,6 +9,7 @@ import com.ultikits.ultitools.annotations.Autowired;
 import com.ultikits.ultitools.annotations.PostConstruct;
 import com.ultikits.ultitools.annotations.Scheduled;
 import com.ultikits.ultitools.annotations.Service;
+import com.ultikits.ultitools.exceptions.DataAccessException;
 import com.ultikits.ultitools.interfaces.DataOperator;
 
 import org.bukkit.Bukkit;
@@ -353,17 +354,28 @@ public class FriendService {
         for (FriendshipData friend : friends) {
             if (friend.getFriendName().equalsIgnoreCase(friendName)) {
                 friend.setFavorite(!friend.isFavorite());
-                try {
-                    dataOperator.update(friend);
-                } catch (IllegalAccessException e) {
-                    plugin.getLogger().error(plugin.i18n("log_friend_update_failed"), e);
-                }
+                writeFriend(friend);
                 friendCache.remove(playerUuid);
                 break;
             }
         }
     }
     
+    /**
+     * Write one friend row. A write that fails is logged with its cause; a write that matched no
+     * stored row (another server sharing the database, or an administrator, removed it after this
+     * server cached it) is logged as the same failure, and the caller drops the cached list.
+     */
+    private void writeFriend(FriendshipData friend) {
+        try {
+            if (dataOperator.updateCounted(friend) == 0) {
+                plugin.getLogger().error(plugin.i18n("log_friend_update_failed"));
+            }
+        } catch (DataAccessException e) {
+            plugin.getLogger().error(plugin.i18n("log_friend_update_failed"), e);
+        }
+    }
+
     /**
      * Set nickname for a friend.
      */
@@ -372,11 +384,7 @@ public class FriendService {
         for (FriendshipData friend : friends) {
             if (friend.getFriendName().equalsIgnoreCase(friendName)) {
                 friend.setNickname(nickname);
-                try {
-                    dataOperator.update(friend);
-                } catch (IllegalAccessException e) {
-                    plugin.getLogger().error(plugin.i18n("log_friend_update_failed"), e);
-                }
+                writeFriend(friend);
                 friendCache.remove(playerUuid);
                 break;
             }

@@ -622,6 +622,43 @@ class SocialListenerTest {
 
     // ==================== FriendListGUI Click Handling ====================
 
+    /**
+     * Delivers a click the way Paper requires a handler to behave (UltiKits/UltiSocial#27, #30): nothing
+     * that changes the player's view, moves the player or removes a friend may happen inside the click
+     * event; all of it is handed to the scheduler as one task, which is then run.
+     *
+     * @param online what {@code Bukkit.getPlayer} answers for the clicked friend
+     */
+    private void clickThenRunDeferredTask(InventoryClickEvent event, Player online) {
+        org.bukkit.plugin.Plugin ultiTools = mock(org.bukkit.plugin.Plugin.class);
+        org.bukkit.plugin.PluginManager pluginManager = mock(org.bukkit.plugin.PluginManager.class);
+        org.bukkit.scheduler.BukkitScheduler scheduler = mock(org.bukkit.scheduler.BukkitScheduler.class);
+        when(pluginManager.getPlugin("UltiTools")).thenReturn(ultiTools);
+        ArgumentCaptor<Runnable> task = ArgumentCaptor.forClass(Runnable.class);
+
+        try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+            bukkitMock.when(() -> Bukkit.getPlayer(any(UUID.class))).thenReturn(online);
+            bukkitMock.when(Bukkit::getPluginManager).thenReturn(pluginManager);
+            bukkitMock.when(Bukkit::getScheduler).thenReturn(scheduler);
+
+            listener.onInventoryClick(event);
+
+            verify(player, never()).closeInventory();
+            verify(player, never()).openInventory(any(Inventory.class));
+            verify(player, never()).teleport(any(Location.class));
+            verify(player, never()).sendMessage(anyString());
+            verify(teleportService, never()).teleport(any(Player.class), any(Location.class));
+            verify(friendService, never()).removeFriend(any(Player.class), anyString());
+            verify(scheduler).runTask(eq(ultiTools), task.capture());
+
+            try {
+                task.getValue().run();
+            } catch (RuntimeException e) {
+                // a task that builds a FriendListGUI cannot finish in this test environment
+            }
+        }
+    }
+
     @Nested
     @DisplayName("handleFriendListClick")
     class HandleFriendListClick {
@@ -680,10 +717,31 @@ class SocialListenerTest {
                     ClickType.LEFT);
             when(event.getWhoClicked()).thenReturn(player);
 
-            listener.onInventoryClick(event);
+            // Paper forbids closing a view from inside an InventoryClickEvent handler, and the
+            // framework now runs a command body at the moment it is dispatched, so the click
+            // handler hands both the close and the command to the scheduler (UltiKits/UltiSocial#27)
+            org.bukkit.plugin.Plugin ultiTools = mock(org.bukkit.plugin.Plugin.class);
+            org.bukkit.plugin.PluginManager pluginManager = mock(org.bukkit.plugin.PluginManager.class);
+            org.bukkit.scheduler.BukkitScheduler scheduler = mock(org.bukkit.scheduler.BukkitScheduler.class);
+            when(pluginManager.getPlugin("UltiTools")).thenReturn(ultiTools);
+            ArgumentCaptor<Runnable> task = ArgumentCaptor.forClass(Runnable.class);
 
-            verify(player).closeInventory();
-            verify(player).performCommand("friend requests");
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(Bukkit::getPluginManager).thenReturn(pluginManager);
+                bukkitMock.when(Bukkit::getScheduler).thenReturn(scheduler);
+
+                listener.onInventoryClick(event);
+
+                verify(player, never()).closeInventory();
+                verify(player, never()).performCommand(anyString());
+                verify(scheduler).runTask(eq(ultiTools), task.capture());
+
+                task.getValue().run();
+
+                org.mockito.InOrder inOrder = inOrder(player);
+                inOrder.verify(player).closeInventory();
+                inOrder.verify(player).performCommand("friend requests");
+            }
         }
 
         @Test
@@ -740,16 +798,54 @@ class SocialListenerTest {
                     ClickType.LEFT);
             when(event.getWhoClicked()).thenReturn(player);
 
-            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
-                bukkitMock.when(() -> Bukkit.getPlayer(any(UUID.class))).thenReturn(friend);
-
-                listener.onInventoryClick(event);
-            }
+            clickThenRunDeferredTask(event, friend);
 
             verify(player).closeInventory();
             verify(teleportService).teleport(eq(player), any(Location.class));
             verify(friendService).setTpCooldown(playerUuid);
             verify(player).sendMessage(contains("Friend"));
+        }
+
+        @Test
+        @DisplayName("Two left clicks in one tick teleport once: the cooldown is checked again when the task runs")
+        void twoClicksInOneTickTeleportOnce() {
+            FriendshipData friendData = FriendshipData.builder()
+                    .friendUuid(friendUuid.toString())
+                    .friendName("Friend")
+                    .build();
+            when(gui.getFriendAtSlot(5)).thenReturn(friendData);
+            when(config.isTpToFriendEnabled()).thenReturn(true);
+            java.util.concurrent.atomic.AtomicBoolean cooling = new java.util.concurrent.atomic.AtomicBoolean();
+            when(friendService.canTeleport(playerUuid)).thenAnswer(inv -> !cooling.get());
+            doAnswer(inv -> {
+                cooling.set(true);
+                return null;
+            }).when(friendService).setTpCooldown(playerUuid);
+
+            InventoryClickEvent first = createInventoryClickEvent(view, inventory, gui, 5, ClickType.LEFT);
+            when(first.getWhoClicked()).thenReturn(player);
+            InventoryClickEvent second = createInventoryClickEvent(view, inventory, gui, 5, ClickType.LEFT);
+            when(second.getWhoClicked()).thenReturn(player);
+
+            org.bukkit.plugin.Plugin ultiTools = mock(org.bukkit.plugin.Plugin.class);
+            org.bukkit.plugin.PluginManager pluginManager = mock(org.bukkit.plugin.PluginManager.class);
+            org.bukkit.scheduler.BukkitScheduler scheduler = mock(org.bukkit.scheduler.BukkitScheduler.class);
+            when(pluginManager.getPlugin("UltiTools")).thenReturn(ultiTools);
+            ArgumentCaptor<Runnable> tasks = ArgumentCaptor.forClass(Runnable.class);
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayer(any(UUID.class))).thenReturn(friend);
+                bukkitMock.when(Bukkit::getPluginManager).thenReturn(pluginManager);
+                bukkitMock.when(Bukkit::getScheduler).thenReturn(scheduler);
+
+                listener.onInventoryClick(first);
+                listener.onInventoryClick(second);
+                verify(scheduler, times(2)).runTask(eq(ultiTools), tasks.capture());
+                tasks.getAllValues().forEach(Runnable::run);
+            }
+
+            verify(teleportService, times(1)).teleport(eq(player), any(Location.class));
+            verify(friendService, times(1)).setTpCooldown(playerUuid);
         }
 
         @Test
@@ -818,11 +914,7 @@ class SocialListenerTest {
                     ClickType.LEFT);
             when(event.getWhoClicked()).thenReturn(player);
 
-            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
-                bukkitMock.when(() -> Bukkit.getPlayer(any(UUID.class))).thenReturn(friend);
-
-                listener.onInventoryClick(event);
-            }
+            clickThenRunDeferredTask(event, friend);
 
             verify(player).teleport(any(Location.class));
             verify(friendService).setTpCooldown(playerUuid);
@@ -841,11 +933,7 @@ class SocialListenerTest {
                     ClickType.RIGHT);
             when(event.getWhoClicked()).thenReturn(player);
 
-            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
-                bukkitMock.when(() -> Bukkit.getPlayer(any(UUID.class))).thenReturn(friend);
-
-                listener.onInventoryClick(event);
-            }
+            clickThenRunDeferredTask(event, friend);
 
             verify(player).closeInventory();
             verify(player).sendMessage(contains("/friend msg Friend"));
@@ -864,11 +952,7 @@ class SocialListenerTest {
                     ClickType.RIGHT);
             when(event.getWhoClicked()).thenReturn(player);
 
-            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
-                bukkitMock.when(() -> Bukkit.getPlayer(any(UUID.class))).thenReturn(null);
-
-                listener.onInventoryClick(event);
-            }
+            clickThenRunDeferredTask(event, null);
 
             verify(player).closeInventory();
             verify(friendService).removeFriend(player, "Friend");
@@ -887,11 +971,7 @@ class SocialListenerTest {
                     ClickType.SHIFT_RIGHT);
             when(event.getWhoClicked()).thenReturn(player);
 
-            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
-                bukkitMock.when(() -> Bukkit.getPlayer(any(UUID.class))).thenReturn(friend);
-
-                listener.onInventoryClick(event);
-            }
+            clickThenRunDeferredTask(event, friend);
 
             verify(player).closeInventory();
             verify(friendService).removeFriend(player, "Friend");
@@ -1038,13 +1118,9 @@ class SocialListenerTest {
                     ClickType.LEFT);
             when(event.getWhoClicked()).thenReturn(player);
 
-            // Note: this creates a new FriendListGUI which will fail in test, but we verify closeInventory
-            try {
-                listener.onInventoryClick(event);
-            } catch (Exception e) {
-                // Expected - FriendListGUI constructor may fail in test environment
-            }
+            clickThenRunDeferredTask(event, null);
 
+            // the task closes the view first; building the friend list may fail in this environment
             verify(player).closeInventory();
         }
 
