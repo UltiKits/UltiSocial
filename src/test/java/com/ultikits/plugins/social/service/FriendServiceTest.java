@@ -5,6 +5,8 @@ import com.ultikits.plugins.social.config.SocialConfig;
 import com.ultikits.plugins.social.entity.BlacklistData;
 import com.ultikits.plugins.social.entity.FriendRequest;
 import com.ultikits.plugins.social.entity.FriendshipData;
+import com.ultikits.ultitools.exceptions.DataAccessException;
+import com.ultikits.ultitools.exceptions.ErrorCode;
 import com.ultikits.ultitools.interfaces.DataOperator;
 import com.ultikits.ultitools.interfaces.Query;
 
@@ -62,6 +64,8 @@ class FriendServiceTest {
         when(friendQuery.exists()).thenReturn(false);
         when(friendQuery.count()).thenReturn(0L);
         when(friendQuery.delete()).thenReturn(0);
+        // the stored row exists unless a test says otherwise: updateCounted writes it (1 row)
+        when(friendDataOperator.updateCounted(any())).thenReturn(1);
 
         // Set up Query DSL chaining for blacklistDataOperator
         when(blacklistDataOperator.query()).thenReturn(blacklistQuery);
@@ -1129,7 +1133,7 @@ class FriendServiceTest {
             service.toggleFavorite(playerUuid, "TestFriend");
 
             assertThat(friendship.isFavorite()).isTrue();
-            verify(friendDataOperator).update(friendship);
+            verify(friendDataOperator).updateCounted(friendship);
         }
 
         @Test
@@ -1148,7 +1152,7 @@ class FriendServiceTest {
             service.toggleFavorite(playerUuid, "TestFriend");
 
             assertThat(friendship.isFavorite()).isFalse();
-            verify(friendDataOperator).update(friendship);
+            verify(friendDataOperator).updateCounted(friendship);
         }
 
         @Test
@@ -1158,7 +1162,7 @@ class FriendServiceTest {
 
             service.toggleFavorite(playerUuid, "NonExistent");
 
-            verify(friendDataOperator, never()).update(any());
+            verify(friendDataOperator, never()).updateCounted(any());
         }
 
         @Test
@@ -1197,11 +1201,11 @@ class FriendServiceTest {
             service.toggleFavorite(playerUuid, "testfriend");
 
             assertThat(friendship.isFavorite()).isTrue();
-            verify(friendDataOperator).update(friendship);
+            verify(friendDataOperator).updateCounted(friendship);
         }
 
         @Test
-        @DisplayName("Should log error when update throws IllegalAccessException")
+        @DisplayName("Should log error when the write fails")
         void logErrorOnUpdateFailure() throws Exception {
             FriendshipData friendship = FriendshipData.builder()
                     .playerUuid(playerUuid.toString())
@@ -1212,8 +1216,8 @@ class FriendServiceTest {
                     .build();
             when(friendQuery.list()).thenReturn(
                     new ArrayList<>(Collections.singletonList(friendship)));
-            doThrow(new IllegalAccessException("test error"))
-                    .when(friendDataOperator).update(any());
+            doThrow(new DataAccessException(ErrorCode.DATA_ENTITY_INVALID, "test error"))
+                    .when(friendDataOperator).updateCounted(any());
 
             // Inject mock plugin for logger verification
             UltiSocialTestHelper.setField(service, "plugin", UltiSocialTestHelper.getMockPlugin());
@@ -1222,7 +1226,90 @@ class FriendServiceTest {
 
             assertThat(friendship.isFavorite()).isTrue();
             verify(UltiSocialTestHelper.getMockLogger()).error(
-                    eq(zhLogLine("log_friend_update_failed")), any(IllegalAccessException.class));
+                    eq(zhLogLine("log_friend_update_failed")), any(DataAccessException.class));
+        }
+    }
+
+    // ==================== a write that matched no stored row (UltiKits/UltiSocial#29) ====================
+
+    @Nested
+    @DisplayName("a favorite or nickname write whose stored row is gone")
+    class StoredRowGone {
+
+        private FriendshipData cachedFriendship() {
+            FriendshipData friendship = FriendshipData.builder()
+                    .playerUuid(playerUuid.toString())
+                    .friendUuid(friendUuid.toString())
+                    .friendName("TestFriend")
+                    .favorite(false)
+                    .createdTime(System.currentTimeMillis())
+                    .build();
+            when(friendQuery.list()).thenReturn(
+                    new ArrayList<>(Collections.singletonList(friendship)));
+            return friendship;
+        }
+
+        @Test
+        @DisplayName("toggleFavorite logs the update-failed line when no row was written")
+        void toggleFavoriteLogsAZeroCount() throws Exception {
+            FriendshipData friendship = cachedFriendship();
+            when(friendDataOperator.updateCounted(friendship)).thenReturn(0);
+
+            service.toggleFavorite(playerUuid, "TestFriend");
+
+            verify(friendDataOperator).updateCounted(friendship);
+            verify(UltiSocialTestHelper.getMockLogger()).error(zhLogLine("log_friend_update_failed"));
+        }
+
+        @Test
+        @DisplayName("toggleFavorite drops the cached list when no row was written, so the next view re-reads the stored rows")
+        void toggleFavoriteDropsTheCacheOnAZeroCount() throws Exception {
+            FriendshipData friendship = cachedFriendship();
+            when(friendDataOperator.updateCounted(friendship)).thenReturn(0);
+
+            service.getFriends(playerUuid); // populate cache
+            service.toggleFavorite(playerUuid, "TestFriend");
+            service.getFriends(playerUuid); // must re-query
+
+            verify(friendQuery, times(2)).list();
+        }
+
+        @Test
+        @DisplayName("setNickname logs the update-failed line when no row was written")
+        void setNicknameLogsAZeroCount() throws Exception {
+            FriendshipData friendship = cachedFriendship();
+            when(friendDataOperator.updateCounted(friendship)).thenReturn(0);
+
+            service.setNickname(playerUuid, "TestFriend", "Buddy");
+
+            verify(friendDataOperator).updateCounted(friendship);
+            verify(UltiSocialTestHelper.getMockLogger()).error(zhLogLine("log_friend_update_failed"));
+        }
+
+        @Test
+        @DisplayName("setNickname drops the cached list when no row was written")
+        void setNicknameDropsTheCacheOnAZeroCount() throws Exception {
+            FriendshipData friendship = cachedFriendship();
+            when(friendDataOperator.updateCounted(friendship)).thenReturn(0);
+
+            service.getFriends(playerUuid); // populate cache
+            service.setNickname(playerUuid, "TestFriend", "Buddy");
+            service.getFriends(playerUuid); // must re-query
+
+            verify(friendQuery, times(2)).list();
+        }
+
+        @Test
+        @DisplayName("control: a write that stored its row logs no failure line")
+        void aStoredRowLogsNothing() throws Exception {
+            FriendshipData friendship = cachedFriendship();
+
+            service.toggleFavorite(playerUuid, "TestFriend");
+            service.setNickname(playerUuid, "TestFriend", "Buddy");
+
+            verify(friendDataOperator, times(2)).updateCounted(friendship);
+            verify(UltiSocialTestHelper.getMockLogger(), never()).error(anyString());
+            verify(UltiSocialTestHelper.getMockLogger(), never()).error(anyString(), any(Object[].class));
         }
     }
 
@@ -1247,7 +1334,7 @@ class FriendServiceTest {
             service.setNickname(playerUuid, "TestFriend", "BestBuddy");
 
             assertThat(friendship.getNickname()).isEqualTo("BestBuddy");
-            verify(friendDataOperator).update(friendship);
+            verify(friendDataOperator).updateCounted(friendship);
         }
 
         @Test
@@ -1257,7 +1344,7 @@ class FriendServiceTest {
 
             service.setNickname(playerUuid, "NonExistent", "Nickname");
 
-            verify(friendDataOperator, never()).update(any());
+            verify(friendDataOperator, never()).updateCounted(any());
         }
 
         @Test
@@ -1297,7 +1384,7 @@ class FriendServiceTest {
         }
 
         @Test
-        @DisplayName("Should log error when update throws IllegalAccessException")
+        @DisplayName("Should log error when the write fails")
         void logErrorOnUpdateFailure() throws Exception {
             FriendshipData friendship = FriendshipData.builder()
                     .playerUuid(playerUuid.toString())
@@ -1307,8 +1394,8 @@ class FriendServiceTest {
                     .build();
             when(friendQuery.list()).thenReturn(
                     new ArrayList<>(Collections.singletonList(friendship)));
-            doThrow(new IllegalAccessException("test error"))
-                    .when(friendDataOperator).update(any());
+            doThrow(new DataAccessException(ErrorCode.DATA_ENTITY_INVALID, "test error"))
+                    .when(friendDataOperator).updateCounted(any());
 
             UltiSocialTestHelper.setField(service, "plugin", UltiSocialTestHelper.getMockPlugin());
 
@@ -1316,7 +1403,7 @@ class FriendServiceTest {
 
             assertThat(friendship.getNickname()).isEqualTo("Buddy");
             verify(UltiSocialTestHelper.getMockLogger()).error(
-                    eq(zhLogLine("log_friend_update_failed")), any(IllegalAccessException.class));
+                    eq(zhLogLine("log_friend_update_failed")), any(DataAccessException.class));
         }
     }
 
