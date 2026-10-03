@@ -807,6 +807,48 @@ class SocialListenerTest {
         }
 
         @Test
+        @DisplayName("Two left clicks in one tick teleport once: the cooldown is checked again when the task runs")
+        void twoClicksInOneTickTeleportOnce() {
+            FriendshipData friendData = FriendshipData.builder()
+                    .friendUuid(friendUuid.toString())
+                    .friendName("Friend")
+                    .build();
+            when(gui.getFriendAtSlot(5)).thenReturn(friendData);
+            when(config.isTpToFriendEnabled()).thenReturn(true);
+            java.util.concurrent.atomic.AtomicBoolean cooling = new java.util.concurrent.atomic.AtomicBoolean();
+            when(friendService.canTeleport(playerUuid)).thenAnswer(inv -> !cooling.get());
+            doAnswer(inv -> {
+                cooling.set(true);
+                return null;
+            }).when(friendService).setTpCooldown(playerUuid);
+
+            InventoryClickEvent first = createInventoryClickEvent(view, inventory, gui, 5, ClickType.LEFT);
+            when(first.getWhoClicked()).thenReturn(player);
+            InventoryClickEvent second = createInventoryClickEvent(view, inventory, gui, 5, ClickType.LEFT);
+            when(second.getWhoClicked()).thenReturn(player);
+
+            org.bukkit.plugin.Plugin ultiTools = mock(org.bukkit.plugin.Plugin.class);
+            org.bukkit.plugin.PluginManager pluginManager = mock(org.bukkit.plugin.PluginManager.class);
+            org.bukkit.scheduler.BukkitScheduler scheduler = mock(org.bukkit.scheduler.BukkitScheduler.class);
+            when(pluginManager.getPlugin("UltiTools")).thenReturn(ultiTools);
+            ArgumentCaptor<Runnable> tasks = ArgumentCaptor.forClass(Runnable.class);
+
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(() -> Bukkit.getPlayer(any(UUID.class))).thenReturn(friend);
+                bukkitMock.when(Bukkit::getPluginManager).thenReturn(pluginManager);
+                bukkitMock.when(Bukkit::getScheduler).thenReturn(scheduler);
+
+                listener.onInventoryClick(first);
+                listener.onInventoryClick(second);
+                verify(scheduler, times(2)).runTask(eq(ultiTools), tasks.capture());
+                tasks.getAllValues().forEach(Runnable::run);
+            }
+
+            verify(teleportService, times(1)).teleport(eq(player), any(Location.class));
+            verify(friendService, times(1)).setTpCooldown(playerUuid);
+        }
+
+        @Test
         @DisplayName("Should show cooldown message when tp on cooldown")
         void showCooldownMessage() {
             FriendshipData friendData = FriendshipData.builder()
