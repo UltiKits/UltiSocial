@@ -47,6 +47,11 @@ public final class UltiSocialTestHelper {
         serverField.setAccessible(true);
         serverField.set(null, mockServer);
         lenient().when(mockServer.getOnlinePlayers()).thenReturn(Collections.emptyList());
+        // The framework confines config reads and writes to the server thread and logs through
+        // Bukkit.getLogger(): a bare Server mock answers false and null, so every config call was refused
+        // or failed on a null logger (UltiKits/UltiSocial#28)
+        lenient().when(mockServer.isPrimaryThread()).thenReturn(true);
+        lenient().when(mockServer.getLogger()).thenReturn(java.util.logging.Logger.getLogger("UltiSocialTest"));
 
         // Mock UltiToolsPlugin (not UltiSocial -- no more singleton)
         mockPlugin = mock(UltiToolsPlugin.class);
