@@ -138,7 +138,11 @@ public class SocialListener implements Listener {
         }
         if (slot == 47) { // Pending requests
             player.closeInventory();
-            player.performCommand("friend requests");
+            // The framework runs a command body at dispatch, so dispatching it inside this click
+            // event would open the requests view while the menu is still open and lose it with the
+            // menu. Paper requires such a handler to defer the command to the next tick.
+            Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("UltiTools"),
+                    () -> player.performCommand("friend requests"));
             return;
         }
         
