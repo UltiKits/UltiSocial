@@ -137,12 +137,13 @@ public class SocialListener implements Listener {
             return;
         }
         if (slot == 47) { // Pending requests
-            player.closeInventory();
-            // The framework runs a command body at dispatch, so dispatching it inside this click
-            // event would open the requests view while the menu is still open and lose it with the
-            // menu. Paper requires such a handler to defer the command to the next tick.
-            Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("UltiTools"),
-                    () -> player.performCommand("friend requests"));
+            // Paper forbids changing the player's view from inside an InventoryClickEvent handler
+            // (see that event's javadoc), and the framework runs a command body at the moment it is
+            // dispatched, so both the close and the command wait for the next tick.
+            Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("UltiTools"), () -> {
+                player.closeInventory();
+                player.performCommand("friend requests");
+            });
             return;
         }
         

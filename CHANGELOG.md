@@ -56,12 +56,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   下次查看会重新读取存储中的记录（UltiKits/UltiSocial#29）。
 
 - The pending-requests button in the friend list (`/friend`, slot 47) now closes the menu and runs
-  `/friend requests` on the next server tick, so the list of requests appears in chat. The framework
-  now runs a command at the moment it is dispatched, and the button dispatched it inside the click
-  event, while the menu was still open (UltiKits/UltiSocial#27).
-- 好友列表（`/friend`）中的待处理请求按钮（第 47 格）现在会先关闭菜单，并在下一个服务器 tick 执行
-  `/friend requests`，请求列表会显示在聊天栏中。框架现在会在命令被派发的那一刻执行它，而该按钮此前在点击事件内
-  派发命令，此时菜单仍处于打开状态（UltiKits/UltiSocial#27）。
+  `/friend requests` on the next server tick instead of inside the click event, where Paper forbids
+  changing the player's view and where the framework now runs a command at the moment it is dispatched.
+  What the player sees is unchanged: the menu closes and the list of requests appears in chat
+  (UltiKits/UltiSocial#27).
+- 好友列表（`/friend`）中的待处理请求按钮（第 47 格）现在会在下一个服务器 tick 关闭菜单并执行
+  `/friend requests`，而不是在点击事件内执行；Paper 不允许在点击事件中改变玩家视图，框架现在也会在命令被派发的
+  那一刻执行命令。玩家看到的效果不变：菜单关闭，请求列表显示在聊天栏中（UltiKits/UltiSocial#27）。
 
 - The warning about a key this version no longer reads now prints the configuration file's path exactly
   as it is. A path containing `{KEY}` or `{REASON}` was rewritten by the placeholders filled after it.
