@@ -44,16 +44,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- Toggling a friend's favorite star (shift+left-click in `/friend`) or setting a friend's nickname for a
-  friendship whose stored row is gone, for example because another server sharing the same database
-  removed it, is now logged as `Failed to update friend data` on every storage type. Before, the write did
-  nothing and nothing was logged, except on JSON storage, where it failed with a raw error. The reply to the
-  player is unchanged and the cached friend list is dropped, so the next view reads the stored rows
+- Toggling a friend's favorite star (shift+left-click in `/friend`) for a friendship whose stored row is
+  gone, for example because another server sharing the same database removed it, is now logged as
+  `Failed to update friend data` on every storage type. Before, the write did nothing and nothing was
+  logged, except on JSON storage, where it failed with a raw error. The same applies to
+  `FriendService#setNickname`, which no command or menu of this module calls. A write that fails in the
+  storage layer is now logged by the module with its cause and the click carries on (the menu refreshes and
+  says `Favorite status updated!`), where before the failure aborted the click with an error in the
+  console. The cached friend list is dropped in both cases, so the next view reads the stored rows
   (UltiKits/UltiSocial#29).
 - 当某个好友关系在存储中的记录已不存在（例如共用同一数据库的另一个服务器已将其删除）时，切换好友收藏星标
-  （在 `/friend` 中 Shift+左键）或设置好友昵称，现在在所有存储类型下都会记录 `Failed to update friend data`。
-  此前这次写入什么也没做且没有任何日志（JSON 存储则以原始错误失败）。给玩家的回复不变，缓存的好友列表会被丢弃，
-  下次查看会重新读取存储中的记录（UltiKits/UltiSocial#29）。
+  （在 `/friend` 中 Shift+左键）现在在所有存储类型下都会记录 `Failed to update friend data`。此前这次写入什么也没做
+  且没有任何日志（JSON 存储则以原始错误失败）。`FriendService#setNickname`（本模块没有命令或菜单调用它）同样如此。
+  存储层写入失败时，模块现在会连同原因一起记录日志，点击继续进行（菜单刷新并提示 `Favorite status updated!`），
+  此前该失败会使点击以控制台错误中止。两种情况下缓存的好友列表都会被丢弃，下次查看会重新读取存储中的记录
+  （UltiKits/UltiSocial#29）。
 
 - The pending-requests button in the friend list (`/friend`, slot 47) now closes the menu and runs
   `/friend requests` on the next server tick instead of inside the click event, where Paper forbids
