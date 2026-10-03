@@ -67,12 +67,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (UltiKits/UltiSocial#27). The same holds for every other click in the friend list that closes it
   (teleport to a friend, the private-message hint, removing a friend) and for the block list's Back button,
   which closes the block list and opens the friend list: the close or open, and what follows it, now happen
-  on the next tick in one task instead of inside the click event (UltiKits/UltiSocial#30).
+  on the next tick in one task instead of inside the click event, and the teleport cooldown is checked again when
+  that task runs, so two clicks in one tick still teleport once (UltiKits/UltiSocial#30).
 - 好友列表（`/friend`）中的待处理请求按钮（第 47 格）现在会在下一个服务器 tick 关闭菜单并执行
   `/friend requests`，而不是在点击事件内执行；Paper 不允许在点击事件中改变玩家视图，框架现在也会在命令被派发的
   那一刻执行命令。玩家看到的效果不变：菜单关闭，请求列表显示在聊天栏中（UltiKits/UltiSocial#27）。好友列表中其他会
   关闭菜单的点击（传送到好友、私聊提示、删除好友）以及黑名单界面的「返回」按钮（关闭黑名单并打开好友列表）同样如此：
-  关闭或打开界面以及随后的操作，现在都在下一个 tick 的同一个任务中完成，而不是在点击事件内（UltiKits/UltiSocial#30）。
+  关闭或打开界面以及随后的操作，现在都在下一个 tick 的同一个任务中完成，而不是在点击事件内；传送冷却在该任务运行时会再次检查，
+  因此同一 tick 内的两次点击仍只传送一次（UltiKits/UltiSocial#30）。
 
 - The warning about a key this version no longer reads now prints the configuration file's path exactly
   as it is. A path containing `{KEY}` or `{REASON}` was rewritten by the placeholders filled after it.

@@ -176,6 +176,11 @@ public class SocialListener implements Listener {
                             player.sendMessage(text(friendService.i18n("tp_cooldown")).replace("{SECONDS}", String.valueOf(remaining)));
                         } else {
                             afterClick(() -> {
+                                // Two clicks in one tick both passed the check above before either task
+                                // ran; the cooldown the first task sets must stop the second.
+                                if (!friendService.canTeleport(player.getUniqueId())) {
+                                    return;
+                                }
                                 player.closeInventory();
                                 // Use TeleportService if available
                                 if (teleportService != null) {
