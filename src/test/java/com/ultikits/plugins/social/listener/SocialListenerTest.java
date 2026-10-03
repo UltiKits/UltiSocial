@@ -680,10 +680,30 @@ class SocialListenerTest {
                     ClickType.LEFT);
             when(event.getWhoClicked()).thenReturn(player);
 
-            listener.onInventoryClick(event);
+            // The framework now runs a command body at the moment it is dispatched, so the
+            // click handler must hand the command to the scheduler: dispatched inside the click
+            // event it would run while the menu is still open and the view it opens would be
+            // closed with it (UltiKits/UltiSocial#27)
+            org.bukkit.plugin.Plugin ultiTools = mock(org.bukkit.plugin.Plugin.class);
+            org.bukkit.plugin.PluginManager pluginManager = mock(org.bukkit.plugin.PluginManager.class);
+            org.bukkit.scheduler.BukkitScheduler scheduler = mock(org.bukkit.scheduler.BukkitScheduler.class);
+            when(pluginManager.getPlugin("UltiTools")).thenReturn(ultiTools);
+            ArgumentCaptor<Runnable> task = ArgumentCaptor.forClass(Runnable.class);
 
-            verify(player).closeInventory();
-            verify(player).performCommand("friend requests");
+            try (MockedStatic<Bukkit> bukkitMock = mockStatic(Bukkit.class)) {
+                bukkitMock.when(Bukkit::getPluginManager).thenReturn(pluginManager);
+                bukkitMock.when(Bukkit::getScheduler).thenReturn(scheduler);
+
+                listener.onInventoryClick(event);
+
+                verify(player).closeInventory();
+                verify(player, never()).performCommand(anyString());
+                verify(scheduler).runTask(eq(ultiTools), task.capture());
+
+                task.getValue().run();
+
+                verify(player).performCommand("friend requests");
+            }
         }
 
         @Test
