@@ -44,6 +44,38 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Toggling a friend's favorite star (shift+left-click in `/friend`) for a friendship whose stored row is
+  gone, for example because another server sharing the same database removed it, is now logged as
+  `Failed to update friend data` on every storage type. Before, the write did nothing and nothing was
+  logged, except on JSON storage, where it failed with a raw error. The same applies to
+  `FriendService#setNickname`, which no command or menu of this module calls. A write that fails in the
+  storage layer is now logged by the module with its cause and the click carries on (the menu refreshes and
+  says `Favorite status updated!`), where before the failure aborted the click with an error in the
+  console. The cached friend list is dropped in both cases, so the next view reads the stored rows
+  (UltiKits/UltiSocial#29).
+- 当某个好友关系在存储中的记录已不存在（例如共用同一数据库的另一个服务器已将其删除）时，切换好友收藏星标
+  （在 `/friend` 中 Shift+左键）现在在所有存储类型下都会记录 `Failed to update friend data`。此前这次写入什么也没做
+  且没有任何日志（JSON 存储则以原始错误失败）。`FriendService#setNickname`（本模块没有命令或菜单调用它）同样如此。
+  存储层写入失败时，模块现在会连同原因一起记录日志，点击继续进行（菜单刷新并提示 `Favorite status updated!`），
+  此前该失败会使点击以控制台错误中止。两种情况下缓存的好友列表都会被丢弃，下次查看会重新读取存储中的记录
+  （UltiKits/UltiSocial#29）。
+
+- The pending-requests button in the friend list (`/friend`, slot 47) now closes the menu and runs
+  `/friend requests` on the next server tick instead of inside the click event, where Paper forbids
+  changing the player's view and where the framework now runs a command at the moment it is dispatched.
+  What the player sees is unchanged: the menu closes and the list of requests appears in chat
+  (UltiKits/UltiSocial#27). The same holds for every other click in the friend list that closes it
+  (teleport to a friend, the private-message hint, removing a friend) and for the block list's Back button,
+  which closes the block list and opens the friend list: the close or open, and what follows it, now happen
+  on the next tick in one task instead of inside the click event, and the teleport cooldown is checked again when
+  that task runs, so two clicks in one tick still teleport once (UltiKits/UltiSocial#30).
+- 好友列表（`/friend`）中的待处理请求按钮（第 47 格）现在会在下一个服务器 tick 关闭菜单并执行
+  `/friend requests`，而不是在点击事件内执行；Paper 不允许在点击事件中改变玩家视图，框架现在也会在命令被派发的
+  那一刻执行命令。玩家看到的效果不变：菜单关闭，请求列表显示在聊天栏中（UltiKits/UltiSocial#27）。好友列表中其他会
+  关闭菜单的点击（传送到好友、私聊提示、删除好友）以及黑名单界面的「返回」按钮（关闭黑名单并打开好友列表）同样如此：
+  关闭或打开界面以及随后的操作，现在都在下一个 tick 的同一个任务中完成，而不是在点击事件内；传送冷却在该任务运行时会再次检查，
+  因此同一 tick 内的两次点击仍只传送一次（UltiKits/UltiSocial#30）。
+
 - The warning about a key this version no longer reads now prints the configuration file's path exactly
   as it is. A path containing `{KEY}` or `{REASON}` was rewritten by the placeholders filled after it.
 - 关于本版本已不再读取的配置键的警告，现在会原样打印配置文件路径。此前路径中若含有 `{KEY}` 或 `{REASON}`，
@@ -101,12 +133,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `messages.player_blocked` and `messages.player_unblocked` never took effect and have been removed;
   they can be deleted from existing `config/social.yml` files. Nothing ever read them: `/friend block`
   and `/friend unblock` replied with fixed text, and now reply from the language file (`lang/en.yml`,
-  `lang/zh.yml`), which is where to change those replies. A file that still holds either key gets
+  `lang/zh.yml`); to customise them, copy the official language file to one whose name starts with its
+  language code and a hyphen (for example `lang/en-myserver.yml`), edit the replies there and set
+  `language: en-myserver` in `plugins/UltiTools/config.yml` (an edit made in the official file itself is
+  restored at the next start or module reload, UltiKits/UltiTools-Reborn#616). A file that still holds either key gets
   the same warning as `notifications.friend_join_world`, at start-up and on every reload of the
   module (UltiKits/UltiSocial#23).
 - `messages.player_blocked` 与 `messages.player_unblocked` 从未生效，现已移除，可从现有的 `config/social.yml` 中删除。
   从未有代码读取它们：`/friend block` 与 `/friend unblock` 的回复原为写死的文本，现在来自语言文件（`lang/en.yml`、
-  `lang/zh.yml`），要修改这两条回复请改那里。仍含其中任一键的文件，会在启动时以及每次重载本模块时收到与
+  `lang/zh.yml`）；要自定义这两条回复，请把官方语言文件复制为以其语言代码加连字符开头的文件（例如 `lang/zh-myserver.yml`），
+  在副本中修改，并在 `plugins/UltiTools/config.yml` 中设置 `language: zh-myserver`（直接修改官方文件的改动会在下次启动或模块重载时被恢复，
+  UltiKits/UltiTools-Reborn#616）。仍含其中任一键的文件，会在启动时以及每次重载本模块时收到与
   `notifications.friend_join_world` 相同的警告（UltiKits/UltiSocial#23）。
 
 - The module's own console lines `UltiSocial has been disabled!` (on unload) and
