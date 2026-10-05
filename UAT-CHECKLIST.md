@@ -27,8 +27,8 @@ for real-machine verification, not user-facing documentation.
   built-in text, and the module shows the file's text; rows that quote them assume the file holds
   the English text this build writes under `language: en` (any start of this build under
   `language: en` leaves it so, unless a value was edited by hand). Before the session, `plugins/UltiTools/pluginConfig/UltiSocial/lang/`
-  is moved aside so this jar's catalogues are extracted fresh (an upgraded install never refreshes an
-  already-extracted language file, `UltiKits/UltiTools-Reborn#459`; `ultisocial.i18n.language`).
+  is moved aside so this jar's catalogues are extracted fresh (on an upgraded install the framework would otherwise replace or restore those files at start,
+  keeping an edited one as `.bak`, `UltiKits/UltiTools-Reborn#459`, `#616`; `ultisocial.i18n.language`).
 - **Covers** back-references a GUI class excluded from the JaCoCo coverage gate; left blank when no such class
   applies. This module owns both of its GUI-excluded classes (`FriendListGUI`, `BlockListGUI`) —
   each is named in exactly one row's Covers cell below.
@@ -163,4 +163,4 @@ must not contain them: `notifications.friend_join_world` (`UltiKits/UltiSocial#1
 
 | ID | Preconditions | Steps | Expected | Layer | Covers |
 |---|---|---|---|---|---|
-| ultisocial.i18n.language | `language: en` in the framework's `plugins/UltiTools/config.yml`, set once for the session before the start; before the start, `plugins/UltiTools/pluginConfig/UltiSocial/lang/` was moved into the session backup directory so this jar's catalogues are extracted fresh (an upgraded install never refreshes an already-extracted language file, UltiKits/UltiTools-Reborn#459); `Tester1` online, holding `ultisocial.use`, with zero friends and zero blocked players | As `Tester1`, run `/friend help`, then `/friend list`, then `/friend blocklist` and read the GUI's title and its slot-22 item | `/friend help` prints the fourteen lines `ultisocial.friend.help` lists; `/friend list` prints `You have no friends yet. Use /friend add <player> to add one`; the blacklist GUI's title reads `Blacklist Management (0)` and slot 22 holds `Your blacklist is empty`. None of the text these three show contains Chinese | server | |
+| ultisocial.i18n.language | `language: en` in the framework's `plugins/UltiTools/config.yml`, set once for the session before the start; before the start, `plugins/UltiTools/pluginConfig/UltiSocial/lang/` was moved into the session backup directory so this jar's catalogues are extracted fresh (on an upgraded install the framework would otherwise replace or restore those files at start, keeping an edited one as `.bak`, UltiKits/UltiTools-Reborn#459, #616); `Tester1` online, holding `ultisocial.use`, with zero friends and zero blocked players | As `Tester1`, run `/friend help`, then `/friend list`, then `/friend blocklist` and read the GUI's title and its slot-22 item | `/friend help` prints the fourteen lines `ultisocial.friend.help` lists; `/friend list` prints `You have no friends yet. Use /friend add <player> to add one`; the blacklist GUI's title reads `Blacklist Management (0)` and slot 22 holds `Your blacklist is empty`. None of the text these three show contains Chinese | server | |

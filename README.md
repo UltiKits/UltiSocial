@@ -253,11 +253,15 @@ teleportService.teleport(player, targetPlayer.getLocation());
 - `zh.yml` - 简体中文
 - `en.yml` - English
 
-### 添加新语言
+### 自定义消息或添加新语言
 
-1. 复制 `en.yml` 为新语言文件（如 `ja.yml`）
-2. 翻译所有文本
-3. 在配置中设置语言或让玩家客户端自动检测
+官方语言文件（`zh.yml`、`en.yml`）归 UltiTools 所有：直接修改的官方文件会在下次启动时恢复为本版本自带的内容，修改过的文件保留为 `.bak`。要自定义或翻译：
+
+1. 在同一 `lang/` 目录中，把官方文件复制为以其语言代码加连字符开头的新文件（例如把 `en.yml` 复制为 `en-ja.yml`）
+2. 修改或翻译副本中的文本；副本中缺少的条目使用文件名开头那种官方语言（此例为 `en`）的文本
+3. 在 `plugins/UltiTools/config.yml` 中设置 `language: en-ja`。这是整个服务器唯一的语言设置，不按玩家客户端区分；没有该文件的其他模块使用各自的官方 `en` 文件
+
+文件名不以官方语言代码加连字符开头时（例如 `ja.yml`），副本仍会被读取，但其中缺少的条目显示英文，并记录一条警告（UltiKits/UltiTools-Reborn#616）。
 
 ## 📊 变更日志
 

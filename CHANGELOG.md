@@ -133,12 +133,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `messages.player_blocked` and `messages.player_unblocked` never took effect and have been removed;
   they can be deleted from existing `config/social.yml` files. Nothing ever read them: `/friend block`
   and `/friend unblock` replied with fixed text, and now reply from the language file (`lang/en.yml`,
-  `lang/zh.yml`), which is where to change those replies. A file that still holds either key gets
+  `lang/zh.yml`); to customise them, copy the official language file to one whose name starts with its
+  language code and a hyphen (for example `lang/en-myserver.yml`), edit the replies there and set
+  `language: en-myserver` in `plugins/UltiTools/config.yml` (an edit made in the official file itself is
+  restored at the next start, UltiKits/UltiTools-Reborn#616). A file that still holds either key gets
   the same warning as `notifications.friend_join_world`, at start-up and on every reload of the
   module (UltiKits/UltiSocial#23).
 - `messages.player_blocked` 与 `messages.player_unblocked` 从未生效，现已移除，可从现有的 `config/social.yml` 中删除。
   从未有代码读取它们：`/friend block` 与 `/friend unblock` 的回复原为写死的文本，现在来自语言文件（`lang/en.yml`、
-  `lang/zh.yml`），要修改这两条回复请改那里。仍含其中任一键的文件，会在启动时以及每次重载本模块时收到与
+  `lang/zh.yml`）；要自定义这两条回复，请把官方语言文件复制为以其语言代码加连字符开头的文件（例如 `lang/zh-myserver.yml`），
+  在副本中修改，并在 `plugins/UltiTools/config.yml` 中设置 `language: zh-myserver`（直接修改官方文件的改动会在下次启动时被恢复，
+  UltiKits/UltiTools-Reborn#616）。仍含其中任一键的文件，会在启动时以及每次重载本模块时收到与
   `notifications.friend_join_world` 相同的警告（UltiKits/UltiSocial#23）。
 
 - The module's own console lines `UltiSocial has been disabled!` (on unload) and
