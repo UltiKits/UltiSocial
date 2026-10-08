@@ -1,8 +1,8 @@
 # UltiSocial - Minecraft 好友系统插件
 
-[![UltiTools-API](https://img.shields.io/badge/UltiTools--API-6.2.1-blue)](https://github.com/UltiKits/UltiTools-Reborn)
-[![Minecraft](https://img.shields.io/badge/Minecraft-1.13--1.21-green)](https://www.spigotmc.org/)
-[![Java](https://img.shields.io/badge/Java-8+-orange)](https://www.oracle.com/java/)
+[![UltiTools-API](https://img.shields.io/badge/UltiTools--API-6.3.0%2B-blue)](https://github.com/UltiKits/UltiTools-Reborn)
+[![Paper](https://img.shields.io/badge/Paper-1.21%2B-green)](https://papermc.io/)
+[![Java](https://img.shields.io/badge/Java-21%2B-orange)](https://adoptium.net/)
 
 UltiSocial 是一个基于 UltiTools-API 框架开发的 Minecraft 好友系统插件，提供完整的好友管理、私聊、传送和黑名单功能。
 
@@ -29,9 +29,9 @@ UltiSocial 是一个基于 UltiTools-API 框架开发的 Minecraft 好友系统�
 
 ## 📦 安装
 
-1. 下载最新版本的 UltiTools-API 核心插件
+1. 下载 UltiTools-API 核心插件，版本需为 6.3.0 或更高。本模块声明 `api-version: 630`，更早的框架会拒绝加载它
 2. 将 `UltiSocial.jar` 放入 `plugins/UltiTools/plugins/` 目录
-3. 重启服务器或使用 `/ultitools reload` 重载插件
+3. 重启服务器以加载模块（`/ul reload` 只重新读取配置，不会加载新的模块 jar）
 
 ## 📝 命令
 
