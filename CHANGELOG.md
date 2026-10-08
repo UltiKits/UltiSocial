@@ -23,13 +23,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - This version requires UltiTools 6.3.0 or later and declares `api-version: 630` in `plugin.yml`
-  (it was `621`). An older framework now refuses the module before its start-up runs, with a warning
-  that the UltiTools version is outdated; the refusal names the module by its `plugin.yml` `name:`,
-  `UltiSocial`. The README's framework minimum and its server and Java badges now say UltiTools
+  (it was `621`; the last release, 1.0.0, declared `620`). A framework older than 6.3.0 refuses it at
+  load with a warning containing `UltiSocial load failed` and `UltiTools version is outdated`, and the
+  module's own start-up does not run; depending on the framework version, an error stack trace may be
+  logged before that warning. Frameworks 6.2.1 to 6.2.5 accepted the old `621` and are the ones that
+  now refuse it. The README's framework minimum and its server and Java badges now say UltiTools
   6.3.0+, Paper 1.21+ and Java 21+ (UltiKits/UltiTools-Reborn#544).
-- 本版本需要 UltiTools 6.3.0 或更高版本，并在 `plugin.yml` 中声明 `api-version: 630`（原为 `621`）。更早的框架会在模块的启动逻辑
-  运行之前拒绝加载它，并给出 UltiTools 版本过旧的警告；拒绝信息以 `plugin.yml` 的 `name:` 即 `UltiSocial` 指代本模块。
-  README 中的框架最低版本以及服务端与 Java 徽章已改为 UltiTools 6.3.0+、Paper 1.21+、Java 21+（UltiKits/UltiTools-Reborn#544）。
+- 本版本需要 UltiTools 6.3.0 或更高版本，并在 `plugin.yml` 中声明 `api-version: 630`（原为 `621`；上一个发布版本 1.0.0
+  声明的是 `620`）。6.3.0 之前的框架会在加载时拒绝本模块，警告中含 `UltiSocial load failed` 与
+  `UltiTools version is outdated`，模块自身的启动逻辑不会运行；视框架版本而定，该警告之前可能先出现一段错误堆栈。
+  此前接受 `621` 的 6.2.1 至 6.2.5 是行为发生变化的版本。README 中的框架最低版本以及服务端与 Java 徽章已改为
+  UltiTools 6.3.0+、Paper 1.21+、Java 21+（UltiKits/UltiTools-Reborn#544）。
 
 - `plugin.yml` now declares `identify-string: ultisocial`, the key of this module's entry in the
   UltiCloud catalogue. The framework's update check and `/upm update` skip a module that does not
