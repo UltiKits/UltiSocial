@@ -49,6 +49,12 @@ for real-machine verification, not user-facing documentation.
 - **Nearly every row below needs a second player** (this is a friend/block system — almost
   nothing in it operates on a single account), named explicitly in Preconditions rather than
   left implied.
+- **Console lines carry the module-logger prefix.** Every line this module logs reaches the console as
+  `[UltiTools] [UltiSocial] <text>`: Paper adds `[UltiTools] `, and the framework's module logger (`PluginLogger`)
+  adds `[UltiSocial] ` (this module's `plugin.yml` `name`). A console line quoted below is the `<text>` after both
+  prefixes, character for character, unless the row quotes a prefix itself; a row that counts or excludes this
+  module's console lines means lines carrying `[UltiSocial]`. A line the framework logs is quoted after Paper's
+  prefix, with its own `[UltiTools-API] ` where the row shows it.
 
 ## Friend Management Commands
 
