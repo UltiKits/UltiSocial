@@ -1,8 +1,6 @@
 # UltiSocial - Minecraft 好友系统插件
 
 [![UltiTools-API](https://img.shields.io/badge/UltiTools--API-6.3.0%2B-blue)](https://github.com/UltiKits/UltiTools-Reborn)
-[![Paper](https://img.shields.io/badge/Paper-1.21%2B-green)](https://papermc.io/)
-[![Java](https://img.shields.io/badge/Java-21%2B-orange)](https://adoptium.net/)
 
 UltiSocial 是一个基于 UltiTools-API 框架开发的 Minecraft 好友系统插件，提供完整的好友管理、私聊、传送和黑名单功能。
 
@@ -265,7 +263,7 @@ teleportService.teleport(player, targetPlayer.getLocation());
 
 ## 📊 变更日志
 
-### v1.1.0 (当前版本) - 2026-02-12
+### v1.1.0（未发布 / unreleased） - 2026-02-12
 
 #### UltiTools-API v6.2.0 迁移
 
