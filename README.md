@@ -263,46 +263,36 @@ teleportService.teleport(player, targetPlayer.getLocation());
 
 ## 📊 变更日志
 
-### v1.1.0（未发布 / unreleased） - 2026-02-12
+### 未发布 / Unreleased
 
-#### UltiTools-API v6.2.0 迁移
+- 需要 UltiTools-API 6.3.0 或更高版本（`api-version: 630`）
 
-- 🚀 **Query DSL**: 数据库查询全面升级到新的 Query DSL API
-  - 替换所有 `WhereCondition.builder()` 为 `dataOperator.query().where().eq()`
-  - 更流畅的链式调用，更易读的代码
-  - 自动优化的 SQL 生成
-- 🚀 **@Scheduled 定时任务**: 使用声明式定时任务替代手动 `runTaskTimer`
-  - 好友请求过期清理改为 `@Scheduled(period = 1200, async = true)`
-  - 自动生命周期管理，无需手动取消
-- 🚀 **配置验证**: 添加 `@Range` 和 `@NotEmpty` 注解
-  - `max_friends`: 1-500 范围验证
-  - `request_timeout`: 10-3600 秒范围验证
-  - `tp_to_friend.cooldown`: 0-3600 秒范围验证
-  - 所有消息字段添加 `@NotEmpty` 验证
-- 🚀 **现代基类**: 迁移到新的基类
-  - `FriendshipData` / `BlacklistData`: `AbstractDataEntity` → `BaseDataEntity<String>`
-  - `FriendCommand`: `AbstractCommandExecutor` → `BaseCommandExecutor`
-- 📝 **代码质量**: 移除过时导入，优化代码结构
+### v1.0.0 (2026-02-15)
 
-#### 功能特性
-
-- ✨ 新增黑名单系统
+- 🎉 初始版本
+- 好友请求系统
+- 好友列表 GUI（显示好友游戏模式）
+- 收藏功能
+- 上下线通知
+- ✨ 黑名单系统
   - 双向屏蔽功能
   - 独立黑名单 GUI
   - 拉黑时自动解除好友
-- ✨ 新增好友传送功能（使用框架 TeleportService）
-- ✨ 新增好友私聊功能
-- ✨ 好友列表显示游戏模式
-- 🔧 优化服务优先级机制（@Service priority）
-- 🔧 重构命令系统，支持 Tab 补全
-- 🔧 完善 i18n 多语言支持
+- ✨ 好友传送功能（使用框架 TeleportService）
+- ✨ 好友私聊功能（`/friend msg`）
+- 🔧 命令支持 Tab 补全
+- 🔧 中英文语言文件（`zh.yml`、`en.yml`）
 
-### v1.0.0
-- 🎉 初始版本
-- 好友请求系统
-- 好友列表 GUI
-- 收藏功能
-- 上下线通知
+#### 基于 UltiTools-API v6.2.0
+
+- 🚀 **Query DSL**: 数据库查询使用 `dataOperator.query().where().eq()`
+- 🚀 **@Scheduled 定时任务**: 好友请求过期清理使用 `@Scheduled(period = 1200, async = true)`，无需手动取消
+- 🚀 **配置验证**: `@Range` 与 `@NotEmpty`
+  - `max_friends`: 1-500
+  - `request_timeout`: 10-3600 秒
+  - `tp_to_friend.cooldown`: 0-3600 秒
+  - 所有消息字段 `@NotEmpty`
+- 🚀 **现代基类**: `FriendshipData` / `BlacklistData` 继承 `BaseDataEntity<String>`，`FriendCommand` 继承 `BaseCommandExecutor`
 
 ## 🤝 贡献
 
