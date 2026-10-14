@@ -49,6 +49,12 @@ for real-machine verification, not user-facing documentation.
 - **Nearly every row below needs a second player** (this is a friend/block system — almost
   nothing in it operates on a single account), named explicitly in Preconditions rather than
   left implied.
+- **Console lines carry the module-logger prefix.** Every line this module logs reaches the console as
+  `[UltiTools] [UltiSocial] <text>`: Paper adds `[UltiTools] `, and the framework's module logger (`PluginLogger`)
+  adds `[UltiSocial] ` (this module's `plugin.yml` `name`). A console line quoted below is the `<text>` after both
+  prefixes, character for character, unless the row quotes a prefix itself; a row that counts or excludes this
+  module's console lines means lines carrying `[UltiSocial]`. A line the framework logs is quoted after Paper's
+  prefix, with its own `[UltiTools-API] ` where the row shows it.
 
 ## Friend Management Commands
 
@@ -103,8 +109,8 @@ for real-machine verification, not user-facing documentation.
 |---|---|---|---|---|---|
 | ultisocial.event.friend-online-notify | `language: en` in the framework's `config.yml`; `notifications.friend_online: true` (shipped default); `Tester1` and `Tester2` are friends; `Tester1` currently offline, `Tester2` online | `Tester1` joins the server | `Tester2` receives `Your friend Tester1 is now online!` (`messages.friend_online`) | server | |
 | ultisocial.event.friend-online-notify.neg-disabled | `notifications.friend_online: false` (NOT the shipped default); same friendship as above | `Tester1` joins the server | `Tester2` receives no notification | server | |
-| ultisocial.event.friend-offline-notify | `language: en` in the framework's `config.yml`; `notifications.friend_offline: true` (shipped default); `Tester1` and `Tester2` are friends, both online | `Tester1` disconnects (quit, not kick) | `Tester2` receives `Your friend Tester1 has gone offline` (`messages.friend_offline`); `Tester1`'s friend/blacklist caches are cleared regardless of this toggle — an in-memory effect no server command or file shows, so that clause is held by `SocialListenerTest$OnPlayerQuit#clearCacheOnQuit` and `#alwaysClearCacheOnQuit` (the cache is cleared on every quit, with the notification on or off), not observed on the server | server | |
-| ultisocial.event.friend-offline-notify.neg-disabled | `notifications.friend_offline: false` (NOT the shipped default); same friendship as above, both online | `Tester1` disconnects | `Tester2` receives no notification; `Tester1`'s caches are still cleared (the cache-clear is unconditional, independent of this toggle) | server | |
+| ultisocial.event.friend-offline-notify | `language: en` in the framework's `config.yml`; `notifications.friend_offline: true` (shipped default); `Tester1` and `Tester2` are friends, both online | `Tester1` disconnects (quit, not kick) | `Tester2` receives `Your friend Tester1 has gone offline` (`messages.friend_offline`). Not a clause of this row: the module also clears `Tester1`'s friend/blacklist caches on every quit, an in-memory effect no server command or file shows; the unit tests `SocialListenerTest$OnPlayerQuit#clearCacheOnQuit` and `#alwaysClearCacheOnQuit` hold it | server | |
+| ultisocial.event.friend-offline-notify.neg-disabled | `notifications.friend_offline: false` (NOT the shipped default); same friendship as above, both online | `Tester1` disconnects | `Tester2` receives no notification. Not a clause of this row: the cache clear on quit, which does not depend on this toggle and which no server command or file shows (unit test `SocialListenerTest$OnPlayerQuit#alwaysClearCacheOnQuit`) | server | |
 
 ## Lifecycle Hooks
 
@@ -138,7 +144,7 @@ back, the second continuing from the first's state and restoring the first's bac
 
 | ID | Preconditions | Steps | Expected | Layer | Covers |
 |---|---|---|---|---|---|
-| ultisocial.task.cleanup-expired-requests | `request_timeout` set to a short, test-friendly value (e.g. 30 seconds, NOT the shipped 60-second default, purely to shorten the wait) BEFORE the request is created; `Tester1` sends `Tester3` a friend request (`ultisocial.friend.add`'s mechanism, any two players not already friends/blocked) | Wait past `request_timeout` seconds, then wait for the next 1200-tick (1-minute) sweep to run, then have `Tester3` run `/friend requests` | The request is gone from `Tester3`'s pending list without `Tester3` ever running `/friend deny` — the scheduled sweep removed it directly from the in-memory queue | server | |
+| ultisocial.task.cleanup-expired-requests | `request_timeout` set to a short, test-friendly value (e.g. 30 seconds, NOT the shipped 60-second default, purely to shorten the wait) BEFORE the request is created; `Tester1` sends `Tester3` a friend request (`ultisocial.friend.add`'s mechanism, any two players not already friends/blocked) | Wait past `request_timeout` seconds, then wait for the next 1200-tick (1-minute) sweep to run, then have `Tester3` run `/friend requests` | The request is gone from `Tester3`'s pending list without `Tester3` ever running `/friend deny`. Not a clause of this row: whether the scheduled sweep or the list command's own expiry check removed it, which no server observation can tell apart (`/friend requests` also drops expired entries as it reads them); `FriendServiceTest$CleanupExpiredRequests` holds the sweep | server | |
 
 ## Data Persistence
 
