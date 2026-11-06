@@ -37,7 +37,7 @@ import com.ultikits.ultitools.annotations.UltiToolsModule;
  * title and messages of {@code config/social.yml} in the server's language (UltiKits/UltiSocial#14).
  *
  * @author wisdomme
- * @version 1.1.0
+ * @version 2.0.0
  */
 @UltiToolsModule(
     scanBasePackages = {"com.ultikits.plugins.social"}
