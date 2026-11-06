@@ -181,12 +181,22 @@ public class SocialListener implements Listener {
                                 if (!friendService.canTeleport(player.getUniqueId())) {
                                     return;
                                 }
+                                Player currentTarget = Bukkit.getPlayer(UUID.fromString(friend.getFriendUuid()));
+                                if (currentTarget == null || !currentTarget.isOnline()) {
+                                    player.sendMessage(text(friendService.i18n("friend_not_online"))
+                                        .replace("{PLAYER}", friend.getFriendName()));
+                                    return;
+                                }
+                                if (!friendService.validateTeleportFriendship(player, currentTarget.getUniqueId(),
+                                        friend.getFriendName())) {
+                                    return;
+                                }
                                 player.closeInventory();
-                                // Use TeleportService if available
+                                // Both backends use the same revalidated target and stored pair.
                                 if (teleportService != null) {
-                                    teleportService.teleport(player, target.getLocation());
+                                    teleportService.teleport(player, currentTarget.getLocation());
                                 } else {
-                                    player.teleport(target.getLocation());
+                                    player.teleport(currentTarget.getLocation());
                                 }
                                 friendService.setTpCooldown(player.getUniqueId());
                                 player.sendMessage(text(friendService.i18n("tp_success")).replace("{PLAYER}", friend.getFriendName()));
@@ -201,7 +211,7 @@ public class SocialListener implements Listener {
                     // Shift+Right: Delete friend
                     afterClick(() -> {
                         player.closeInventory();
-                        friendService.removeFriend(player, friend.getFriendName());
+                        friendService.removeFriendIfPresent(player, UUID.fromString(friend.getFriendUuid()));
                     });
                 } else {
                     // Right: Send message (if online) or delete (if offline)
@@ -214,7 +224,7 @@ public class SocialListener implements Listener {
                         // Offline - delete friend
                         afterClick(() -> {
                             player.closeInventory();
-                            friendService.removeFriend(player, friend.getFriendName());
+                            friendService.removeFriendIfPresent(player, UUID.fromString(friend.getFriendUuid()));
                         });
                     }
                 }
