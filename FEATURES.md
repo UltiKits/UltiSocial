@@ -35,7 +35,7 @@ for UAT execution and issue reconciliation — the public description of these f
   override (grep confirms zero uses of `@CmdMapping(permission=)` in this class), so every
   command row below reads `ultisocial.use` with no suffix.
 - **Source:** `ClassName#member` — the class and member that actually reads or applies the
-  feature — for every Kind, `config` included: all 17 `config` rows below cite the reading member,
+  feature — for every Kind, `config` included: all 19 `config` rows below cite the reading member,
   not `SocialConfig`'s own field declaration.
 - **Row order:** by section, then by ID ascending within the section.
 - **No manual prose:** no troubleshooting column, no explanatory paragraphs, no draft page text.
@@ -82,28 +82,21 @@ find <repo-root>/src/main/java -path '*/gui/*' -name '*.java' -not -path '*/targ
 ```
 
 **Positive control:** the line-start form returns `@CmdExecutor` = 1, `@CmdMapping` = 13,
-`@EventListener` = 1 (class), `@EventHandler` = 3 (handler methods), `@Scheduled` = 1,
-`@ConditionalOnConfig` = 0, `@ConfigEntity` = 1, `@ConfigEntry` = 17, `@Table` = 2 — confirmed by
-reading `FriendCommand.java` directly (13 `@CmdMapping` sites at lines 54, 60, 78, 94, 99, 104, 109, 126, 172, 219, 255, 264, 272) and `SocialConfig.java` (17 `@ConfigEntry` sites; 20 before
-`UltiKits/UltiSocial#15` removed `notifications.friend_join_world`, 19 before
-`UltiKits/UltiSocial#23` removed `messages.player_blocked` and `messages.player_unblocked`). The
+`@EventListener` = 1 (class), `@EventHandler` = 4 (handler methods), `@Scheduled` = 1,
+`@ConditionalOnConfig` = 0, `@ConfigEntity` = 1, `@ConfigEntry` = 19, `@Table` = 2 — confirmed by
+reading `FriendCommand.java` (13 mappings) and `SocialConfig.java` (19 entries: the previous
+17 plus two opt-in world-notification settings added for `UltiKits/UltiSocial#21`). The historical
+`notifications.friend_join_world` and two unread blacklist-message keys remain removed. The
 `find`-based GUI-class count above returns 2, matching the module's independently-derived
 list of GUI classes excluded from the coverage gate (`FriendListGUI`, `BlockListGUI`).
 This document's command-row count matches the `@CmdMapping` annotation-site count exactly (13
 against 13).
 
-**Reconciliation note — event Kind (3 `@EventHandler` methods, 2 of them catalogued as `event`
-rows; plus 2 `event` rows with no handler; 4 `event` rows in total):** the totals are not a 1:1
-match, the same shape as UltiBackup's own reconciliation note.
-`SocialListener` carries 3 `@EventHandler` methods; only `onPlayerJoin` and `onPlayerQuit` are
-catalogued as `event`-Kind rows in `## Player Presence Notifications` below. The third
-(`onInventoryClick`, which dispatches to two private handlers for the two GUI classes) is the
-click-routing implementation *for* this module's `gui`-Kind rows, not an independent
-player-visible behaviour of its own — named, by method, in each `gui`-Kind row's own Feature
-text in `## GUI` below. The third and fourth `event`-Kind rows, `ultisocial.lifecycle.reload` and
-`ultisocial.lifecycle.removed-key-warning` in `## Lifecycle Hooks`, have no `@EventHandler` of their
-own: they are `event`-Kind because the framework's module enable and `/ul reload` drive them, not a
-command this repository maps.
+**Reconciliation note — event Kind:** `SocialListener` has four `@EventHandler` methods:
+`onPlayerJoin`, `onPlayerQuit` and `onPlayerChangedWorld` supply three presence `event` rows;
+`onInventoryClick` routes the two `gui` rows rather than defining an independent feature.
+The three lifecycle rows (`reload`, `removed-key-warning`, `legacy-text-defaults`) have no Bukkit
+handler: module enable and reload drive them. There are six `event` rows in total.
 
 ## Friend Management Commands
 
@@ -140,14 +133,14 @@ module's GUI classes excluded from the coverage gate.
 
 ## Player Presence Notifications
 
-`SocialListener` — class-level `@EventListener`. Two of this class's three `@EventHandler`
-methods are catalogued here (see the Conventions section's own reconciliation note for the
-third, which is `ultisocial.gui.*`'s own click-routing implementation).
+`SocialListener` — class-level `@EventListener`. Three of its four `@EventHandler` methods
+are catalogued here; the fourth routes inventory clicks for the GUI rows.
 
 | ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
 |---|---|---|---|---|---|---|---|---|
 | ultisocial.event.friend-offline-notify | Notify every online friend of a quitting player, using `NotificationService` if a bean is available, otherwise a plain chat message; also unconditionally clears the quitting player's friend/blacklist caches regardless of the notification toggle. The notification text is `messages.friend_offline` (the file's text, written in the server's language) | event | quit the server while at least one online friend is watching, with `notifications.friend_offline: true` | n/a | n/a | internal | brief | SocialListener#onPlayerQuit |
 | ultisocial.event.friend-online-notify | Notify every online friend of a joining player, using `NotificationService` if a bean is available, otherwise a plain chat message. The notification text is `messages.friend_online` (the file's text, written in the server's language) | event | join the server while at least one online friend is watching, with `notifications.friend_online: true` | n/a | n/a | internal | brief | SocialListener#onPlayerJoin |
+| ultisocial.event.friend-world-arrival | Opt-in notice only to unblocked friends already in the destination world who can see the arriving player; never to self, strangers or friends elsewhere. Login and same-world teleport do not count. Explicit denial of `ultisocial.notify.world` suppresses receiving and announcing arrivals (unset/granted allows both). Per-arriving-player monotonic cooldown spans destinations; only delivered batches consume it, suppressed events do not extend it, quit/unload resets it. Uses `NotificationService` when available, otherwise chat; `friend_world_changed` catalogue text supplies `{PLAYER}` and `{WORLD}` in the server language | event | switch worlds with `notifications.friend_world_change.enabled: true` | ultisocial.notify.world (explicit deny opts out) | n/a | player | brief | SocialListener#onPlayerChangedWorld, FriendService#isBlocked |
 
 ## Lifecycle Hooks
 
@@ -168,7 +161,7 @@ read it through `FriendService#getConfig()` at call time, so `/ul reload UltiSoc
 | ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
 |---|---|---|---|---|---|---|---|---|
 | ultisocial.lifecycle.reload | `/ul reload UltiSocial` re-reads `config/social.yml` into the running module, so an edited `tp_to_friend.enabled` governs the next `/friend tp` without a restart; the framework logs its own `Module 'UltiSocial' reloaded.` line and this module adds no reload work of its own beyond the removed-key check of `ultisocial.lifecycle.removed-key-warning`, which prints a line only while `config/social.yml` still holds a key this version no longer reads, and the config-text write of `ultisocial.lifecycle.legacy-text-defaults`, which saves `config/social.yml` only when a value changed. Before `UltiKits/UltiSocial#13` the module's reload override replaced the framework's reload and only logged `UltiSocial configuration reloaded!`, so the reload reported success without reloading anything and an edit took effect only after a restart | event | `/ul reload UltiSocial`, or bare `/ul reload` (framework calls `reloadSelf()`, which reloads configuration, refreshes language, runs the `@ConditionalOnConfig` drift check and logs its own per-module line; this module declares no `/friend reload` subcommand) | n/a | n/a | admin | brief | FriendCommand#teleportToFriend |
-| ultisocial.lifecycle.removed-key-warning | When the module is enabled and again on every reload of it (`/ul reload` or `/ul reload UltiSocial`), read the operator's own `config/social.yml` and, for each key this version no longer reads that is still in it, log one console WARNING naming the file, the key, what became of the setting and that the key can be deleted. The keys are `notifications.friend_join_world`, removed by UltiKits/UltiSocial#15 (it never had any effect; the notification it described is the feature request UltiKits/UltiSocial#21, and no other setting replaces it), and `messages.player_blocked` and `messages.player_unblocked`, removed by UltiKits/UltiSocial#23 (nothing ever read them; the block and unblock replies come from the language file); the framework writes a declared default only for a missing key and never deletes one, so every server that ran an earlier version still has them. The line comes from the language file, so it follows the `language` setting. A missing or unparseable file produces no warning, and an error inside the check itself is logged as one warning and never stops the module enabling or reloading. The file checked is the one `SocialConfig` binds (its `@ConfigEntity` value), not a second copy of its path | event | module enable (server start, or loading the module) and every reload of it: bare `/ul reload`, which reloads every module, or `/ul reload UltiSocial` | n/a | n/a | admin | brief | UltiSocial#registerSelf, UltiSocial#onReload, RemovedConfigKeys#warnAboutLeftovers |
+| ultisocial.lifecycle.removed-key-warning | When the module is enabled and again on every reload of it (`/ul reload` or `/ul reload UltiSocial`), read the operator's own `config/social.yml` and, for each key this version no longer reads that is still in it, log one console WARNING naming the file, the key, what became of the setting and that the key can be deleted. The keys are `notifications.friend_join_world`, removed by UltiKits/UltiSocial#15 (it never had any effect; it stays unused; the warning now directs operators to explicitly opt in through `notifications.friend_world_change.enabled` and its cooldown, implemented for UltiKits/UltiSocial#21), and `messages.player_blocked` and `messages.player_unblocked`, removed by UltiKits/UltiSocial#23 (nothing ever read them; the block and unblock replies come from the language file); the framework writes a declared default only for a missing key and never deletes one, so every server that ran an earlier version still has them. The line comes from the language file, so it follows the `language` setting. A missing or unparseable file produces no warning, and an error inside the check itself is logged as one warning and never stops the module enabling or reloading. The file checked is the one `SocialConfig` binds (its `@ConfigEntity` value), not a second copy of its path | event | module enable (server start, or loading the module) and every reload of it: bare `/ul reload`, which reloads every module, or `/ul reload UltiSocial` | n/a | n/a | admin | brief | UltiSocial#registerSelf, UltiSocial#onReload, RemovedConfigKeys#warnAboutLeftovers |
 | ultisocial.lifecycle.legacy-text-defaults | When the module is enabled and again on every reload of it (`UltiSocial#registerSelf`, `#onReload`, both after the framework has read `config/social.yml` and loaded the language — never from a configuration change listener, which the framework fires before it reloads the language): each of `gui_title` and the ten `messages.*` values that is still built-in text — the Chinese default an earlier version shipped, or this jar's English or Chinese text for it (read from the module jar, never from the language files on disk) — and differs from the current text is replaced with this jar's built-in text for the server's language (its `lang/<language>.yml`), and the file is saved once. An untouched value therefore follows a `language` switch in both directions; a value that differs in any way, even by one character, is the operator's and is kept byte for byte; a text that would break the setting's `@NotEmpty` is never written, and a blank value is refused by the framework's `@NotEmpty` check as in every earlier version; a second start with the same language writes nothing. A single-module `/ul reload UltiSocial` does not re-read the framework's `language`, so a changed `language` is picked up on a bare `/ul reload` or a restart. A failed save is logged as one warning from the language file (`log_config_default_save_failed`) naming the file, and the module keeps showing the new text. The text written is this jar's own built-in text for the server's language (the jar's `lang/<language>.yml`), not the extracted language file on disk, so every value the module writes is one it recognises again; these settings are edited in the config file, and an edit of the extracted language file does not change them (earlier versions never read them from the language file either; the text source decision of 2026-09-25) | event | module enable and every reload of it | n/a | n/a | admin | brief | UltiSocial#registerSelf, UltiSocial#onReload, SocialConfig#materializeText, ConfigTextDefaults |
 
 ## Scheduled Tasks
@@ -194,8 +187,8 @@ blocked them; only the blocker's own list ever shows the relationship.
 
 ## Configuration
 
-Every `@ConfigEntry`-annotated field on this module's one `@ConfigEntity` class (17 keys total,
-matching the reconciliation table's own `@ConfigEntry` count of 17 exactly). This module ships NO
+Every `@ConfigEntry`-annotated field on this module's one `@ConfigEntity` class (19 keys total,
+matching the reconciliation table's own `@ConfigEntry` count of 19 exactly). This module ships NO
 `config/social.yml` resource under `src/main/resources` — the file is generated entirely from
 these `@ConfigEntry` field defaults the first time the module boots. The framework writes the title
 and the ten messages with the Chinese text each shipped with in every earlier version, and the module
@@ -207,12 +200,10 @@ the block and unblock replies were fixed text, and now come from the language fi
 removed (`UltiKits/UltiSocial#23`); an operator's file that still holds them gets a warning
 (`ultisocial.lifecycle.removed-key-warning`).
 
-Another, `notifications.friend_join_world`, declared a "notify when a friend joins your world"
-feature that was never implemented (no handler for a player changing worlds existed anywhere in
-this module). It is removed as of `UltiKits/UltiSocial#15` rather than built — the feature is
-recorded as a request in `UltiKits/UltiSocial#21`; removing the setting does not reject it. A fresh
-`config/social.yml` no longer contains it; an existing file keeps it, because the framework never
-deletes a key from an operator's file.
+The historical `notifications.friend_join_world` key remains removed (`UltiKits/UltiSocial#15`):
+its old values never activate the new feature. `UltiKits/UltiSocial#21` instead implements world
+arrival notices using two distinct opt-in keys below. A fresh file has no old key; an existing
+file keeps it and receives updated guidance naming the new keys. No automatic migration is performed.
 
 | ID | Feature | Kind | How to reach | Permission | Target | Tier | Manual | Source |
 |---|---|---|---|---|---|---|---|---|
@@ -230,6 +221,8 @@ deletes a key from an operator's file.
 | ultisocial.config.social.messages.request_sent | Message shown to the sender when a friend request is successfully queued | config | `config/social.yml: messages.request_sent (default: written in the server's language, from the jar's catalogue key request_sent; under language: en "&aFriend request sent to {PLAYER}!"; the text shown is the file's text)` | n/a | n/a | admin | brief | FriendService#sendRequest |
 | ultisocial.config.social.notifications.friend_offline | Enable the friend-offline chat/notification-service message | config | `config/social.yml: notifications.friend_offline (default: true)` | n/a | n/a | admin | brief | SocialListener#onPlayerQuit |
 | ultisocial.config.social.notifications.friend_online | Enable the friend-online chat/notification-service message | config | `config/social.yml: notifications.friend_online (default: true)` | n/a | n/a | admin | brief | SocialListener#onPlayerJoin |
+| ultisocial.config.social.notifications.friend_world_change.cooldown | Seconds between delivered world arrival batches for each arriving player, shared across destinations (range 0–3600; 0 disables throttling); only eligible deliveries consume it; suppressed changes do not restart it; quit or unload resets it | config | `config/social.yml: notifications.friend_world_change.cooldown (default: 30)` | n/a | n/a | admin | brief | SocialListener#onPlayerChangedWorld |
+| ultisocial.config.social.notifications.friend_world_change.enabled | Enable world arrival notices to visible, unblocked destination friends, excluding login and same-world teleport; live reload supported, old `friend_join_world` stays unused | config | `config/social.yml: notifications.friend_world_change.enabled (default: false)` | n/a | n/a | admin | brief | SocialListener#onPlayerChangedWorld |
 | ultisocial.config.social.request_timeout | Friend request expiry, in seconds (range 10-3600, enforced by `@Range`); checked by the 1-minute scheduled sweep, inline on `/friend accept` (a request past this age is treated as `request_expired` even if the sweep has not yet removed it), and inline on `/friend requests`/`getPendingRequests` (an expired request is filtered out of the view before it is shown) — NOT checked by `/friend deny`, which removes a request by sender name unconditionally whether or not it has expired | config | `config/social.yml: request_timeout (default: 60)` | n/a | n/a | admin | brief | FriendService#cleanupExpiredRequests, FriendService#acceptRequest, FriendService#getPendingRequests, FriendRequest#isExpired |
 | ultisocial.config.social.tp_to_friend.cooldown | Per-sender cooldown between successful `/friend tp` teleports, in seconds (range 0-3600, enforced by `@Range`) | config | `config/social.yml: tp_to_friend.cooldown (default: 30)` | n/a | n/a | admin | brief | FriendService#canTeleport, FriendService#getRemainingCooldown |
 | ultisocial.config.social.tp_to_friend.enabled | Enable the `/friend tp` command and the friend-list GUI's own left-click teleport action entirely | config | `config/social.yml: tp_to_friend.enabled (default: true)` | n/a | n/a | admin | brief | FriendCommand#teleportToFriend, FriendListGUI#createFriendItem |

@@ -87,6 +87,11 @@ request_timeout: 60
 notifications:
   friend_online: true
   friend_offline: true
+  # Opt-in world arrival notices / 主动开启好友进入世界通知
+  friend_world_change:
+    enabled: false
+    # Per arriving player, across worlds; 0 disables throttling / 每位到达玩家跨世界冷却，0 不限流
+    cooldown: 30
 
 # Teleporting to friends / 传送到好友
 tp_to_friend:
@@ -110,6 +115,34 @@ messages:
   already_friends: "&c你已经和 {PLAYER} 是好友了！"
   blocked: "&c无法与 {PLAYER} 进行好友操作，因为存在黑名单关系"
 ```
+
+### Friend world arrival notifications / 好友进入世界通知
+
+Enable `notifications.friend_world_change.enabled` in `config/social.yml`, then run
+`/ul reload UltiSocial`. Only friends already in the destination world are told when a player
+switches worlds; neither the arriving player nor friends in other worlds are told. Login and
+same-world teleports do not trigger this notice. The message follows the server language:
+`Your friend {PLAYER} entered your world ({WORLD})!` in English.
+
+The default is **disabled**, and the old removed `notifications.friend_join_world` key stays
+unused (including old `true` values). Its warning now points to the new opt-in setting; this
+feature does not migrate or overwrite operator-written config.
+
+`notifications.friend_world_change.cooldown` is 0–3600 seconds (default 30), shared across all
+destinations for each arriving player. A suppressed event does not restart the timer; an arrival
+with no eligible recipients does not consume it. The cooldown resets on quit or module unload,
+and is not a server-wide budget across different players. Set it to 0 to disable throttling.
+
+Blocks in either direction suppress the notice. A recipient who cannot see the arriving player
+also receives nothing. Explicitly deny `ultisocial.notify.world` to opt a player out of receiving
+**and announcing** world arrivals; unset or granted allows both. This is a permission-provider
+preference, not a new `/friend` subcommand or a module-owned preference database. To customise
+the message, use the custom-language-file mechanism below (`friend_world_changed`).
+
+在 `config/social.yml` 开启 `notifications.friend_world_change.enabled` 后重载模块即可。
+只有目标世界里已有的好友收到通知；登录、同世界传送不通知。旧的 `friend_join_world` 键仍无效。
+冷却按到达玩家跨世界计算，默认 30 秒，退出或卸载后重置。双向黑名单、隐藏玩家和显式拒绝
+`ultisocial.notify.world` 都会阻止通知；该权限拒绝同时关闭自己的接收和到达公告。
 
 ## 🗄️ 数据存储
 
@@ -244,6 +277,7 @@ teleportService.teleport(player, targetPlayer.getLocation());
 | `ultisocial.friend.msg` | 好友私聊功能 | true |
 | `ultisocial.friend.block` | 黑名单功能 | true |
 | `ultisocial.friend.bypass` | 绕过好友数量限制 | op |
+| `ultisocial.notify.world` | Explicit deny opts out of receiving and announcing world arrivals / 显式拒绝则关闭接收与到达公告 | allowed when unset / 未设置时允许 |
 
 ## 🌐 多语言支持
 

@@ -38,6 +38,13 @@ public class SocialConfig extends AbstractConfigEntity {
     @ConfigEntry(path = "notifications.friend_offline", comment = "Notify when friend goes offline")
     private boolean notifyFriendOffline = true;
 
+    @ConfigEntry(path = "notifications.friend_world_change.enabled", comment = "Notify friends in the destination world on world changes (not login)")
+    private boolean notifyFriendWorldChange = false;
+
+    @Range(min = 0, max = 3600)
+    @ConfigEntry(path = "notifications.friend_world_change.cooldown", comment = "Seconds between world arrival notification batches per arriving player; 0 disables throttling")
+    private int friendWorldChangeCooldown = 30;
+
     @ConfigEntry(path = "tp_to_friend.enabled", comment = "Allow teleporting to friends")
     private boolean tpToFriendEnabled = true;
 
