@@ -27,10 +27,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   load with a warning containing `UltiSocial load failed` and `UltiTools version is outdated`, and the
   module's own start-up does not run; depending on the framework version, an error stack trace may be
   logged before that warning (UltiKits/UltiTools-Reborn#544).
+  Upgrade UltiTools to 6.3.0 before replacing this module's JAR.
 - 本版本需要 UltiTools 6.3.0 或更高版本，并在 `plugin.yml` 中声明 `api-version: 630`，上一个发布版本 1.0.0
   声明的是 `620`。6.3.0 之前的框架会在加载时拒绝本模块，警告中含 `UltiSocial load failed` 与
   `UltiTools version is outdated`，模块自身的启动逻辑不会运行；视框架版本而定，该警告之前可能先出现一段错误堆栈
-  （UltiKits/UltiTools-Reborn#544）。
+  （UltiKits/UltiTools-Reborn#544）。更换模块 JAR 前请先将 UltiTools 升级到 6.3.0。
 
 - `plugin.yml` now declares `identify-string: ultisocial`, the key of this module's entry in the
   UltiCloud catalogue. The framework's update check and `/upm update` skip a module that does not
