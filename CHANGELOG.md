@@ -128,7 +128,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   启用日志现为 `UltiSocial has been enabled!`，此前其中写的版本号 v1.1.0 本模块从未有过。
 
 - Reloading this module (`/ul reload UltiSocial`, or `/ul reload` for every module) now re-reads
-  `config/social.yml` and refreshes the language files, so an edited value such as
+  `config/social.yml` and rebuilds the catalogue for the language in use, checking its official
+  language file rather than every shipped language, so an edited value such as
   `tp_to_friend.enabled` applies to the next command without a restart. The framework's reload
   already performed both steps, but this module's reload method replaced it and only logged a line,
   so neither step ran and the reload reported success without reloading anything. UltiTools 6.3.0
@@ -139,7 +140,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   friend-list and block-list GUI clicks) stop firing; this module has no unload work of its own.
   Previously both stayed active until the server restarted (UltiKits/UltiSocial#13).
 - 重载本模块（`/ul reload UltiSocial`，或对所有模块执行 `/ul reload`）现在会重新读取 `config/social.yml`
-  并刷新语言文件，修改后的 `tp_to_friend.enabled` 等配置无需重启即可对下一条命令生效。框架的重载本已执行这两步，
+  并重建当前使用语言的词典、检查其官方语言文件，而非所有随模块发布的语言；修改后的 `tp_to_friend.enabled` 等配置无需重启即可对下一条命令生效。框架的重载本已执行这两步，
   但本模块的重载方法替换了它且只输出一行日志，因此这两步都不会执行，重载报告成功却什么也没有重载。
   UltiTools 6.3.0 还会在此时执行 `@ConditionalOnConfig` 漂移检查（本模块没有条件注册的 Bean，因此不会报告任何
   内容）并输出框架自身的模块重载日志（UltiKits/UltiSocial#13）。
