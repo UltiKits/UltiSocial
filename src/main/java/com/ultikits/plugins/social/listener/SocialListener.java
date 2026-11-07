@@ -5,6 +5,7 @@ import com.ultikits.plugins.social.entity.FriendshipData;
 import com.ultikits.plugins.social.gui.BlockListGUI;
 import com.ultikits.plugins.social.gui.FriendListGUI;
 import com.ultikits.plugins.social.service.FriendService;
+import com.ultikits.plugins.social.util.Placeholders;
 import com.ultikits.ultitools.annotations.Autowired;
 import com.ultikits.ultitools.annotations.EventListener;
 import com.ultikits.ultitools.services.NotificationService;
@@ -16,10 +17,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.function.LongSupplier;
 
 /**
  * Listener for social events.
@@ -40,6 +46,64 @@ public class SocialListener implements Listener {
     @Autowired(required = false)
     private TeleportService teleportService;
     
+    // Only accessed on the server thread. Quit drops the arriving player's entry; unload drops all.
+    private final Map<UUID, Long> worldArrivalNotifications = new HashMap<>();
+    private LongSupplier nanoTime = System::nanoTime;
+
+    /**
+     * Explicit permission denial suppresses both receiving and announcing world arrivals. Unset
+     * permissions allow this opt-in feature without requiring global Bukkit permission registration.
+     */
+    private static boolean allowsWorldNotifications(Player player) {
+        return !player.isPermissionSet("ultisocial.notify.world")
+                || player.hasPermission("ultisocial.notify.world");
+    }
+
+    /**
+     * Observe a completed world switch, never a login or a cancellable teleport intent. Notify only
+     * visible, unblocked friends already in the destination world. One monotonic cooldown covers all
+     * destinations for the arriving player; suppressed events do not extend it. No file is written.
+     */
+    @EventHandler
+    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
+        if (!friendService.getConfig().isNotifyFriendWorldChange()) {
+            return;
+        }
+        Player player = event.getPlayer();
+        if (!allowsWorldNotifications(player)) {
+            return;
+        }
+        UUID playerId = player.getUniqueId();
+        long now = nanoTime.getAsLong();
+        long cooldown = TimeUnit.SECONDS.toNanos(friendService.getConfig().getFriendWorldChangeCooldown());
+        Long last = worldArrivalNotifications.get(playerId);
+        if (last != null && now - last < cooldown) {
+            return;
+        }
+        boolean notified = false;
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online.getUniqueId().equals(playerId)
+                    || !online.getWorld().equals(player.getWorld())
+                    || !allowsWorldNotifications(online)
+                    || !online.canSee(player)
+                    || !friendService.areFriends(online.getUniqueId(), playerId)
+                    || friendService.isBlocked(online.getUniqueId(), playerId)) {
+                continue;
+            }
+            String message = Placeholders.fill(text(friendService.i18n("friend_world_changed")),
+                    "{PLAYER}", player.getName(), "{WORLD}", player.getWorld().getName());
+            if (notificationService != null) {
+                notificationService.sendMessageNotification(online, message);
+            } else {
+                online.sendMessage(message);
+            }
+            notified = true;
+        }
+        if (notified) {
+            worldArrivalNotifications.put(playerId, now);
+        }
+    }
+
     /**
      * Runs {@code task} on the next tick. Paper forbids changing the player's view (closing or opening an
      * inventory) from inside an {@code InventoryClickEvent} handler (see that event's javadoc), and the
@@ -86,7 +150,8 @@ public class SocialListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         
-        // Clear cache
+        // Clear cache and session-only arrival throttle, even when offline notifications are disabled.
+        worldArrivalNotifications.remove(player.getUniqueId());
         friendService.clearCache(player.getUniqueId());
         
         if (!friendService.getConfig().isNotifyFriendOffline()) {

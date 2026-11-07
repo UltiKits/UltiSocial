@@ -31,7 +31,7 @@ import static org.mockito.Mockito.mock;
  * keys in a fresh file IS the module's declared configuration surface. These tests drive a real
  * {@link ConfigManager} against an empty module folder and read back the file it writes.
  * <p>
- * The file holds the 17 settings {@link SocialConfig} declares, all read by the module. Two more,
+ * The file holds the 19 settings {@link SocialConfig} declares, all read by the module. Two more,
  * {@code messages.player_blocked} and {@code messages.player_unblocked}, were declared but read by
  * nothing and are removed (UltiKits/UltiSocial#23); the replies to {@code /friend block} and
  * {@code /friend unblock} come from the language file. The framework writes the eleven message and
@@ -55,6 +55,8 @@ class SocialConfigFreshFileTest {
             "request_timeout",
             "notifications.friend_online",
             "notifications.friend_offline",
+            "notifications.friend_world_change.enabled",
+            "notifications.friend_world_change.cooldown",
             "tp_to_friend.enabled",
             "tp_to_friend.cooldown",
             "gui_title",
@@ -103,17 +105,19 @@ class SocialConfigFreshFileTest {
     }
 
     @Test
-    @DisplayName("the notifications section holds only the online and offline switches, never friend_join_world")
-    void notificationsHoldOnlyOnlineAndOffline() throws Exception {
+    @DisplayName("the notifications section adds opt-in world changes without reviving friend_join_world")
+    void notificationsKeepLegacyKeyRemoved() throws Exception {
         YamlConfiguration yaml = freshFile();
 
         assertThat(yaml.contains("notifications.friend_join_world")).isFalse();
         assertThat(yaml.getConfigurationSection("notifications").getKeys(false))
-                .containsExactly("friend_online", "friend_offline");
+                .containsExactly("friend_online", "friend_offline", "friend_world_change");
+        assertThat(yaml.getBoolean("notifications.friend_world_change.enabled")).isFalse();
+        assertThat(yaml.getInt("notifications.friend_world_change.cooldown")).isEqualTo(30);
     }
 
     @Test
-    @DisplayName("the whole file holds exactly the 17 settings SocialConfig declares and FEATURES.md lists, and no other")
+    @DisplayName("the whole file holds exactly the 19 settings SocialConfig declares and FEATURES.md lists, and no other")
     void holdsExactlyTheDocumentedKeys() throws Exception {
         YamlConfiguration yaml = freshFile();
 
@@ -124,7 +128,7 @@ class SocialConfigFreshFileTest {
             }
         }
         assertThat(leaves).containsExactlyInAnyOrderElementsOf(EXPECTED_KEYS);
-        assertThat(leaves).hasSize(17);
+        assertThat(leaves).hasSize(19);
     }
 
     @Test
@@ -145,6 +149,57 @@ class SocialConfigFreshFileTest {
                     .isNotBlank()
                     .isEqualTo(com.ultikits.plugins.social.i18n.CatalogueText.text("zh", e.getValue()));
         }
+    }
+
+    @Test
+    @DisplayName("world notification reload reads both keys and preserves complete operator config bytes")
+    void worldNotificationReloadPreservesOperatorContent() throws Exception {
+        YamlConfiguration yaml = freshFile();
+        File file = moduleFolder.resolve("config/social.yml").toFile();
+        yaml.set("notifications.friend_join_world", true);
+        yaml.set("messages.friend_added", "&dCustom {PLAYER}");
+        yaml.save(file);
+        byte[] operatorContent = (new String(java.nio.file.Files.readAllBytes(file.toPath()),
+                java.nio.charset.StandardCharsets.UTF_8).replace("\n", "\r\n")
+                + "# Keep this operator comment\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        java.nio.file.Files.write(file.toPath(), operatorContent);
+
+        UltiToolsPlugin plugin = mock(UltiSocial.class, CALLS_REAL_METHODS);
+        setField(UltiToolsPlugin.class, plugin, "resourceFolderPath", moduleFolder.toString());
+        SocialConfig config = new SocialConfig("config/social.yml");
+        ConfigManager manager = new ConfigManager();
+        manager.register(plugin, config);
+        assertThat(config.isNotifyFriendWorldChange()).as("old true key never opts in").isFalse();
+        assertThat(config.getFriendAddedMessage()).isEqualTo("&dCustom {PLAYER}");
+        assertThat(java.nio.file.Files.readAllBytes(file.toPath())).isEqualTo(operatorContent);
+
+        String edited = new String(operatorContent, java.nio.charset.StandardCharsets.UTF_8)
+                .replace("enabled: false", "enabled: true")
+                .replace("cooldown: 30", "cooldown: 7");
+        byte[] updated = edited.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        java.nio.file.Files.write(file.toPath(), updated);
+        manager.reloadConfigs(plugin);
+        assertThat(config.isNotifyFriendWorldChange()).isTrue();
+        assertThat(config.getFriendWorldChangeCooldown()).isEqualTo(7);
+        assertThat(config.getFriendAddedMessage()).isEqualTo("&dCustom {PLAYER}");
+        assertThat(java.nio.file.Files.readAllBytes(file.toPath())).isEqualTo(updated);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {-1, 3601})
+    void invalidWorldCooldownRefusesLoadWithoutRewritingFile(int invalid) throws Exception {
+        YamlConfiguration yaml = freshFile();
+        File file = moduleFolder.resolve("config/social.yml").toFile();
+        yaml.set("notifications.friend_world_change.cooldown", invalid);
+        yaml.save(file);
+        byte[] before = java.nio.file.Files.readAllBytes(file.toPath());
+        UltiToolsPlugin plugin = mock(UltiSocial.class, CALLS_REAL_METHODS);
+        setField(UltiToolsPlugin.class, plugin, "resourceFolderPath", moduleFolder.toString());
+        SocialConfig config = new SocialConfig("config/social.yml");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new ConfigManager().register(plugin, config))
+                .isInstanceOf(com.ultikits.ultitools.exceptions.ConfigurationException.class)
+                .hasMessageContaining("friendWorldChangeCooldown").hasMessageContaining("out of range");
+        assertThat(java.nio.file.Files.readAllBytes(file.toPath())).isEqualTo(before);
     }
 
     @SuppressWarnings("PMD.AvoidAccessibilityAlteration") // points the module's config folder at a temp directory

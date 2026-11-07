@@ -86,8 +86,9 @@ class RemovedConfigKeysTest {
         assertThat(warning).contains(file.getPath());
         assertThat(warning).contains("'notifications.friend_join_world'");
         assertThat(warning).contains("no longer reads");
-        // What the operator can do about it: nothing replaces it, the feature is a request, and
-        // the key can be deleted.
+        // The legacy key remains inert; opting in now uses a distinct, implemented setting.
+        assertThat(warning).contains("notifications.friend_world_change.enabled")
+                .contains("notifications.friend_world_change.cooldown");
         assertThat(warning).contains("UltiKits/UltiSocial#21");
         assertThat(warning).contains("UltiKits/UltiSocial#15");
         assertThat(warning).contains("Delete the key from the file to silence this warning.");
