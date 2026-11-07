@@ -5,6 +5,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 本文件记录本项目的所有重要更改，格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)。
 
+## [Unreleased]
+
+### Fixed
+
+- Queued friend-list removals now read the current friendship by UUID and silently skip a pair
+  already removed by an earlier click. Both shift+right-click and offline right-click avoid an
+  extra "is not your friend" reply; the explicit `/friend remove` command keeps that reply.
+- A queued friend teleport now resolves the target again and refuses a disconnected target without
+  moving the viewer, reporting success or consuming cooldown, for both teleport backends.
+- Friend-list teleports now check the current stored friendship and both blacklist directions when
+  the queued action runs, rather than trusting the open menu or cached lists. A completed remove/block
+  on this server or another server sharing the database prevents that stale action. This check is
+  pair-scoped and does not promise atomic cross-server revocation (UltiKits/UltiSocial#32).
+
 ## [2.0.0] - 2026-10-21
 
 ### Added

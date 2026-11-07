@@ -8,6 +8,9 @@ import com.ultikits.plugins.social.entity.FriendshipData;
 import com.ultikits.plugins.social.gui.BlockListGUI;
 import com.ultikits.plugins.social.gui.FriendListGUI;
 import com.ultikits.plugins.social.service.FriendService;
+import com.ultikits.ultitools.abstracts.data.BaseDataEntity;
+import com.ultikits.ultitools.interfaces.DataOperator;
+import com.ultikits.ultitools.interfaces.Query;
 import com.ultikits.ultitools.services.NotificationService;
 import com.ultikits.ultitools.services.TeleportService;
 
@@ -23,6 +26,10 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
@@ -71,6 +78,9 @@ class SocialListenerTest {
         friendUuid = UUID.randomUUID();
         player = UltiSocialTestHelper.createMockPlayer("TestPlayer", playerUuid);
         friend = UltiSocialTestHelper.createMockPlayer("Friend", friendUuid);
+        when(friend.isOnline()).thenReturn(true);
+        // Existing listener unit tests mock authorization; the #32 regressions below use the real service.
+        when(friendService.validateTeleportFriendship(eq(player), eq(friendUuid), anyString())).thenReturn(true);
     }
 
     @AfterEach
@@ -648,7 +658,7 @@ class SocialListenerTest {
             verify(player, never()).teleport(any(Location.class));
             verify(player, never()).sendMessage(anyString());
             verify(teleportService, never()).teleport(any(Player.class), any(Location.class));
-            verify(friendService, never()).removeFriend(any(Player.class), anyString());
+            verify(friendService, never()).removeFriendIfPresent(any(Player.class), any(UUID.class));
             verify(scheduler).runTask(eq(ultiTools), task.capture());
 
             try {
@@ -955,7 +965,7 @@ class SocialListenerTest {
             clickThenRunDeferredTask(event, null);
 
             verify(player).closeInventory();
-            verify(friendService).removeFriend(player, "Friend");
+            verify(friendService).removeFriendIfPresent(player, friendUuid);
         }
 
         @Test
@@ -974,7 +984,7 @@ class SocialListenerTest {
             clickThenRunDeferredTask(event, friend);
 
             verify(player).closeInventory();
-            verify(friendService).removeFriend(player, "Friend");
+            verify(friendService).removeFriendIfPresent(player, friendUuid);
         }
 
         @Test
@@ -1230,6 +1240,230 @@ class SocialListenerTest {
 
             verify(gui, never()).getBlockedUserAtSlot(anyInt());
         }
+    }
+
+    @Nested
+    @DisplayName("Deferred GUI actions revalidate current state (#32)")
+    class DeferredStateRevalidation {
+        private FriendService realService;
+        private final List<FriendshipData> storedFriends = new ArrayList<>();
+        private final List<BlacklistData> storedBlocks = new ArrayList<>();
+        private FriendListGUI gui;
+        private Inventory inventory;
+        private InventoryView view;
+        private org.bukkit.scheduler.BukkitScheduler scheduler;
+        private org.bukkit.plugin.PluginManager pluginManager;
+        private org.bukkit.plugin.Plugin corePlugin;
+        private final List<Runnable> tasks = new ArrayList<>();
+
+        @BeforeEach
+        void currentStorageWithRetainedGuiSnapshot() throws Exception {
+            realService = spy(new FriendService());
+            UltiSocialTestHelper.setField(realService, "plugin", UltiSocialTestHelper.getMockPlugin());
+            when(UltiSocialTestHelper.getMockPlugin().i18n(anyString()))
+                    .thenAnswer(com.ultikits.plugins.social.i18n.CatalogueText.answer("en"));
+            UltiSocialTestHelper.setField(realService, "config", config);
+            storedFriends.add(friendship(playerUuid, friendUuid, "Friend"));
+            storedFriends.add(friendship(friendUuid, playerUuid, "TestPlayer"));
+            DataOperator<FriendshipData> friends = storageOperator(storedFriends, (row, column) -> {
+                if ("player_uuid".equals(column)) return row.getPlayerUuid();
+                if ("friend_uuid".equals(column)) return row.getFriendUuid();
+                throw new IllegalArgumentException("Unexpected friendship column: " + column);
+            });
+            DataOperator<BlacklistData> blocks = storageOperator(storedBlocks, (row, column) -> {
+                if ("player_uuid".equals(column)) return row.getPlayerUuid();
+                if ("blocked_uuid".equals(column)) return row.getBlockedUuid();
+                throw new IllegalArgumentException("Unexpected blacklist column: " + column);
+            });
+            UltiSocialTestHelper.setField(realService, "dataOperator", friends);
+            UltiSocialTestHelper.setField(realService, "blacklistDataOperator", blocks);
+            UltiSocialTestHelper.setField(listener, "friendService", realService);
+            when(config.isTpToFriendEnabled()).thenReturn(true);
+            when(config.getTpCooldown()).thenReturn(30);
+            when(friend.isOnline()).thenReturn(true);
+
+            // Use the real service's cached list, retained exactly as the GUI constructor retains it.
+            List<FriendshipData> snapshot = realService.getFriends(playerUuid);
+            gui = mock(FriendListGUI.class);
+            when(gui.getFriendAtSlot(5)).thenAnswer(inv -> snapshot.get(0));
+            inventory = mock(Inventory.class);
+            when(inventory.getHolder()).thenReturn(gui);
+            view = mock(InventoryView.class);
+            realService.getBlacklist(playerUuid);
+            realService.getBlacklist(friendUuid);
+            scheduler = mock(org.bukkit.scheduler.BukkitScheduler.class);
+            pluginManager = mock(org.bukkit.plugin.PluginManager.class);
+            corePlugin = mock(org.bukkit.plugin.Plugin.class);
+            when(pluginManager.getPlugin("UltiTools")).thenReturn(corePlugin);
+            when(scheduler.runTask(eq(corePlugin), any(Runnable.class))).thenAnswer(inv -> {
+                tasks.add(inv.getArgument(1));
+                return mock(org.bukkit.scheduler.BukkitTask.class);
+            });
+        }
+
+        private FriendshipData friendship(UUID owner, UUID target, String name) {
+            FriendshipData row = FriendshipData.builder().playerUuid(owner.toString())
+                    .friendUuid(target.toString()).friendName(name).build();
+            row.setId(owner + ":" + target);
+            return row;
+        }
+
+        private void bindBukkit(MockedStatic<Bukkit> bukkit, boolean targetOnline) {
+            bukkit.when(Bukkit::getScheduler).thenReturn(scheduler);
+            bukkit.when(Bukkit::getPluginManager).thenReturn(pluginManager);
+            bukkit.when(() -> Bukkit.getPlayer(friendUuid)).thenReturn(targetOnline ? friend : null);
+        }
+
+        private void click(ClickType type) {
+            listener.onInventoryClick(createInventoryClickEvent(view, inventory, gui, 5, type));
+        }
+
+        private void assertRejected(String expectedReply) {
+            verify(teleportService, never()).teleport(any(Player.class), any(Location.class));
+            verify(player, never()).teleport(any(Location.class));
+            verify(realService, never()).setTpCooldown(any(UUID.class));
+            assertThat(realService.canTeleport(playerUuid)).isTrue();
+            ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
+            verify(player).sendMessage(messages.capture());
+            assertThat(messages.getValue()).isEqualTo(expectedReply);
+        }
+
+        @ParameterizedTest
+        @EnumSource(value = ClickType.class, names = {"SHIFT_RIGHT", "RIGHT"})
+        void duplicateDeleteHasOneConfirmationAndNoNotFriendReply(ClickType type) {
+            try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+                bindBukkit(bukkit, type == ClickType.SHIFT_RIGHT);
+                click(type);
+                click(type);
+                assertThat(tasks).hasSize(2);
+                verify(player, never()).sendMessage(anyString());
+                tasks.forEach(Runnable::run);
+            }
+            assertThat(storedFriends).isEmpty();
+            verify(player, times(2)).closeInventory();
+            verify(player).sendMessage("§cRemoved friend Friend");
+            verify(player, never()).sendMessage(contains("is not your friend"));
+        }
+
+        @ParameterizedTest
+        @CsvSource({"true,true", "true,false", "false,true", "false,false"})
+        void targetLeavesBeforeTaskDoesNotTeleportOrConsumeCooldown(boolean serviceAvailable,
+                                                                     boolean lookupAbsent) throws Exception {
+            if (!serviceAvailable) UltiSocialTestHelper.setField(listener, "teleportService", null);
+            try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+                bindBukkit(bukkit, true);
+                click(ClickType.LEFT);
+                assertThat(tasks).hasSize(1);
+                when(friend.isOnline()).thenReturn(false);
+                if (lookupAbsent) bukkit.when(() -> Bukkit.getPlayer(friendUuid)).thenReturn(null);
+                tasks.get(0).run();
+            }
+            assertRejected("§cFriend is not online!");
+        }
+
+        @ParameterizedTest
+        @CsvSource({"false,false", "false,true", "true,false", "true,true"})
+        void removedOrBlockedFriendCannotUseOldGui(boolean remote, boolean blocked) {
+            try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+                bindBukkit(bukkit, true);
+                click(ClickType.LEFT);
+                assertThat(tasks).hasSize(1);
+                if (remote) {
+                    storedFriends.clear();
+                    if (blocked) storedBlocks.add(BlacklistData.create(friendUuid, playerUuid, "TestPlayer", null));
+                    // Control: the local predicates remain stale despite the committed remote change.
+                    assertThat(realService.areFriends(playerUuid, friendUuid)).isTrue();
+                    assertThat(realService.isBlocked(playerUuid, friendUuid)).isFalse();
+                } else if (blocked) {
+                    assertThat(realService.addToBlacklist(friend, player, null)).isTrue();
+                } else {
+                    assertThat(realService.removeFriend(friend, "TestPlayer")).isTrue();
+                }
+                assertThat(gui.getFriendAtSlot(5).getFriendUuid()).isEqualTo(friendUuid.toString());
+                tasks.get(0).run();
+            }
+            assertRejected(blocked ? "§cCannot interact with Friend due to blacklist" : "§cFriend is not your friend!");
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void eitherDirectionBlockIsCheckedAgainstStorage(boolean viewerBlocks) {
+            UUID blocker = viewerBlocks ? playerUuid : friendUuid;
+            UUID blocked = viewerBlocks ? friendUuid : playerUuid;
+            // Keep the friendship fixture to prove that the block check independently rejects.
+            storedBlocks.add(BlacklistData.create(blocker, blocked, "Blocked", null));
+            assertThat(realService.isBlocked(playerUuid, friendUuid)).isFalse();
+            try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+                bindBukkit(bukkit, true);
+                click(ClickType.LEFT);
+                tasks.get(0).run();
+            }
+            assertRejected("§cCannot interact with Friend due to blacklist");
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = {true, false})
+        void unrelatedPairChangesDoNotPreventValidTeleport(boolean serviceAvailable) throws Exception {
+            if (!serviceAvailable) UltiSocialTestHelper.setField(listener, "teleportService", null);
+            UUID unrelated = UUID.randomUUID();
+            storedBlocks.add(BlacklistData.create(friendUuid, unrelated, "Other", null));
+            storedBlocks.add(BlacklistData.create(playerUuid, unrelated, "Other", null));
+            try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+                bindBukkit(bukkit, true);
+                click(ClickType.LEFT);
+                verify(player, never()).closeInventory();
+                tasks.get(0).run();
+            }
+            if (serviceAvailable) verify(teleportService).teleport(player, friend.getLocation());
+            else verify(player).teleport(friend.getLocation());
+            verify(realService).setTpCooldown(playerUuid);
+            verify(player).sendMessage("§aTeleported to Friend!");
+            assertThat(realService.canTeleport(playerUuid)).isFalse();
+        }
+
+        @Test
+        void explicitRemoveStillReportsNotFriend() {
+            storedFriends.clear();
+            realService.clearCache(playerUuid);
+            assertThat(realService.removeFriend(player, "Friend")).isFalse();
+            verify(player).sendMessage("§cFriend is not your friend!");
+        }
+    }
+
+    /** In-memory query fixture: every query reads current rows and honors its exact pair predicates. */
+    private static <T extends BaseDataEntity<String>> DataOperator<T> storageOperator(
+            List<T> rows, java.util.function.BiFunction<T, String, String> value) {
+        @SuppressWarnings("unchecked")
+        DataOperator<T> operator = mock(DataOperator.class);
+        doAnswer(inv -> { rows.add(inv.getArgument(0)); return null; }).when(operator).insert(any());
+        doAnswer(inv -> { rows.removeIf(row -> Objects.equals(row.getId(), inv.getArgument(0))); return null; })
+                .when(operator).delById(any());
+        when(operator.query()).thenAnswer(inv -> {
+            @SuppressWarnings("unchecked")
+            Query<T> query = mock(Query.class);
+            Map<String, Object> conditions = new LinkedHashMap<>();
+            String[] column = new String[1];
+            when(query.where(anyString())).thenAnswer(call -> { column[0] = call.getArgument(0); return query; });
+            when(query.eq(any())).thenAnswer(call -> { conditions.put(column[0], call.getArgument(0)); return query; });
+            java.util.function.Supplier<List<T>> matching = () -> {
+                List<T> matches = new ArrayList<>();
+                for (T row : rows) {
+                    if (conditions.entrySet().stream().allMatch(entry ->
+                            Objects.equals(value.apply(row, entry.getKey()), entry.getValue()))) matches.add(row);
+                }
+                return matches;
+            };
+            when(query.list()).thenAnswer(call -> matching.get());
+            when(query.first()).thenAnswer(call -> matching.get().stream().findFirst().orElse(null));
+            when(query.exists()).thenAnswer(call -> !matching.get().isEmpty());
+            when(query.delete()).thenAnswer(call -> {
+                List<T> matches = matching.get();
+                rows.removeAll(matches);
+                return matches.size();
+            });
+            return query;
+        });
+        return operator;
     }
 
     // ==================== Helper Methods ====================

@@ -442,6 +442,9 @@ class SocialTextLanguageTest {
             when(gui.getFriendAtSlot(5)).thenReturn(friend(bob, "Bob"));
             Player online = mock(Player.class);
             when(online.getLocation()).thenReturn(mock(Location.class));
+            when(online.isOnline()).thenReturn(true);
+            when(online.getUniqueId()).thenReturn(bob);
+            when(service.validateTeleportFriendship(player, bob, "Bob")).thenReturn(true);
             // closing the menu and what follows run in a scheduler task (UltiKits/UltiSocial#30); run it at once here
             org.bukkit.plugin.PluginManager pluginManager = mock(org.bukkit.plugin.PluginManager.class);
             when(pluginManager.getPlugin("UltiTools")).thenReturn(mock(org.bukkit.plugin.Plugin.class));

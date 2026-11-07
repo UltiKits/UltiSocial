@@ -266,24 +266,68 @@ public class FriendService {
             return false;
         }
         
-        // Remove bidirectional
-        dataOperator.delById(toRemove.getId());
-        
-        // Remove reverse friendship
+        removeStoredFriend(player, toRemove, friendName);
+        return true;
+    }
+
+    /**
+     * Execute a queued GUI removal by pair identity against current storage, not its old GUI/cache
+     * entry. A previous click may already have removed the pair: that is a silent no-op here, while
+     * the explicit {@link #removeFriend(Player, String)} command retains its not-friend reply.
+     */
+    public void removeFriendIfPresent(Player player, UUID friendUuid) {
+        FriendshipData current = dataOperator.query()
+            .where("player_uuid").eq(player.getUniqueId().toString())
+            .where("friend_uuid").eq(friendUuid.toString())
+            .first();
+        if (current != null) {
+            removeStoredFriend(player, current, current.getFriendName());
+        }
+    }
+
+    private void removeStoredFriend(Player player, FriendshipData friendship, String friendName) {
+        UUID playerUuid = player.getUniqueId();
+        dataOperator.delById(friendship.getId());
         dataOperator.query()
-            .where("player_uuid").eq(toRemove.getFriendUuid())
+            .where("player_uuid").eq(friendship.getFriendUuid())
             .where("friend_uuid").eq(playerUuid.toString())
             .delete();
-        
-        // Clear cache
         friendCache.remove(playerUuid);
-        friendCache.remove(UUID.fromString(toRemove.getFriendUuid()));
-        
+        friendCache.remove(UUID.fromString(friendship.getFriendUuid()));
         player.sendMessage(config.getFriendRemovedMessage()
             .replace("{PLAYER}", friendName)
             .replace("&", "§"));
-        
+    }
+
+    /**
+     * Authorize one queued GUI teleport using current stored pair records. The normal list predicates
+     * are cache-backed, so they cannot observe a removal/block committed on another server. This is
+     * an action-time check, not an atomic cross-server revocation guarantee.
+     *
+     * @return true only while the stored friendship exists and neither direction is blocked;
+     *         otherwise sends the existing refusal and returns false without consuming cooldown
+     */
+    public boolean validateTeleportFriendship(Player player, UUID friendUuid, String friendName) {
+        UUID playerUuid = player.getUniqueId();
+        if (isCurrentlyBlockedBy(playerUuid, friendUuid) || isCurrentlyBlockedBy(friendUuid, playerUuid)) {
+            player.sendMessage(config.getBlockedMessage().replace("{PLAYER}", friendName).replace("&", "§"));
+            return false;
+        }
+        if (!dataOperator.query()
+                .where("player_uuid").eq(playerUuid.toString())
+                .where("friend_uuid").eq(friendUuid.toString())
+                .exists()) {
+            player.sendMessage(plugin.i18n("not_friend").replace("{PLAYER}", friendName).replace("&", "§"));
+            return false;
+        }
         return true;
+    }
+
+    private boolean isCurrentlyBlockedBy(UUID blockerUuid, UUID blockedUuid) {
+        return blacklistDataOperator.query()
+            .where("player_uuid").eq(blockerUuid.toString())
+            .where("blocked_uuid").eq(blockedUuid.toString())
+            .exists();
     }
     
     /**

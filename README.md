@@ -295,6 +295,14 @@ teleportService.teleport(player, targetPlayer.getLocation());
 
 文件名不以官方语言代码加连字符开头时（例如 `ja.yml`），副本仍会被读取，但其中缺少的条目显示英文，并记录一条警告（UltiKits/UltiTools-Reborn#616）。
 
+## ⚠️ Known limitations / 已知限制
+
+When two servers share one MySQL database, a friendship removal or block committed on the **other** server in the short window after a player left-clicks a friend's entry in the friend list and before the queued teleport task runs (normally the next server tick) is not guaranteed to be seen by that queued teleport. Revocations completed before the click are honoured on every server: the teleport is refused (`<name> is not your friend!` for a removal, the configured blocked message for a block), the player does not move and no cooldown is consumed. Revocations made on the same server between the click and the queued task are also honoured.
+
+Operators running several servers on one database need do nothing; if a removal or block must take effect immediately everywhere, the affected players can simply re-open the friend list after the change.
+
+多服共用同一 MySQL 数据库时，玩家点击好友列表条目之后、排队的传送任务执行之前（通常是下一个服务器 tick）的极短窗口内，在**另一台**服务器上完成的删除好友或拉黑操作，不保证被该次传送看到；点击之前完成的撤销在所有服务器上都会生效。
+
 ## 📊 变更日志
 
 ### 未发布 / Unreleased
