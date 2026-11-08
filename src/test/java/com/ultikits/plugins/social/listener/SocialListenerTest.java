@@ -1323,6 +1323,8 @@ class SocialListenerTest {
             verify(player, never()).teleport(any(Location.class));
             verify(realService, never()).setTpCooldown(any(UUID.class));
             assertThat(realService.canTeleport(playerUuid)).isTrue();
+            // The list was built before the refusal, so it is closed rather than left on screen.
+            verify(player).closeInventory();
             ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
             verify(player).sendMessage(messages.capture());
             assertThat(messages.getValue()).isEqualTo(expectedReply);
@@ -1383,6 +1385,24 @@ class SocialListenerTest {
                 tasks.get(0).run();
             }
             assertRejected(blocked ? "§cCannot interact with Friend due to blacklist" : "§cFriend is not your friend!");
+            // The refusal drops the stale cached list, so the next list no longer shows the ex-friend.
+            assertThat(realService.areFriends(playerUuid, friendUuid)).isFalse();
+            assertThat(realService.getFriends(playerUuid)).isEmpty();
+        }
+
+        @Test
+        void removalDeletesDuplicateForwardRowsOfThePair() {
+            FriendshipData duplicate = friendship(playerUuid, friendUuid, "Friend");
+            duplicate.setId(playerUuid + ":" + friendUuid + ":duplicate");
+            storedFriends.add(duplicate);
+            try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+                bindBukkit(bukkit, true);
+                click(ClickType.SHIFT_RIGHT);
+                tasks.get(0).run();
+            }
+            assertThat(storedFriends).isEmpty();
+            assertThat(realService.areFriends(playerUuid, friendUuid)).isFalse();
+            verify(player).sendMessage("§cRemoved friend Friend");
         }
 
         @ParameterizedTest

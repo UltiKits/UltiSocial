@@ -31,6 +31,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the queued action runs, rather than trusting the open menu or cached lists. A completed remove/block
   on this server or another server sharing the database prevents that stale action. This check is
   pair-scoped and does not promise atomic cross-server revocation (UltiKits/UltiSocial#32).
+- A refused friend-list teleport (the friend went offline, or the friendship was removed or blocked
+  meanwhile) now closes the friend list instead of leaving the outdated list on screen, and drops both
+  players' cached friend and block lists so the next `/friend list` shows the stored state
+  (UltiKits/UltiSocial#53).
+- Removing a friend now deletes every stored row of that pair. Older data could hold two rows for one
+  friend; the second one kept the friendship alive after a removal (UltiKits/UltiSocial#53).
+- 好友列表中被拒绝的传送（好友已下线，或期间好友关系被删除或拉黑）现在会关闭好友列表，不再把过时的列表留在屏幕上，
+  并清除双方缓存的好友与黑名单列表，下次 `/friend list` 显示存储中的实际状态（UltiKits/UltiSocial#53）。
+- 删除好友时现在会删除该好友对的所有存储行。旧数据中一个好友可能存有两行，删除后另一行会让好友关系继续存在
+  （UltiKits/UltiSocial#53）。
 
 ## [2.0.0] - 2026-10-21
 

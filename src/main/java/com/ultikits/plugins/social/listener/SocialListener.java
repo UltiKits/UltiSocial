@@ -247,13 +247,17 @@ public class SocialListener implements Listener {
                                     return;
                                 }
                                 Player currentTarget = Bukkit.getPlayer(UUID.fromString(friend.getFriendUuid()));
+                                // A refused teleport closes the list too: it was built before the
+                                // refusal and may still show the friend as online or as a friend.
                                 if (currentTarget == null || !currentTarget.isOnline()) {
+                                    player.closeInventory();
                                     player.sendMessage(text(friendService.i18n("friend_not_online"))
                                         .replace("{PLAYER}", friend.getFriendName()));
                                     return;
                                 }
                                 if (!friendService.validateTeleportFriendship(player, currentTarget.getUniqueId(),
                                         friend.getFriendName())) {
+                                    player.closeInventory();
                                     return;
                                 }
                                 player.closeInventory();
