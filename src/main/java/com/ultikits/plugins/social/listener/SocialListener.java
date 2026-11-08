@@ -32,7 +32,7 @@ import java.util.function.LongSupplier;
  * Handles player join/quit notifications and GUI interactions.
  *
  * @author wisdomme
- * @version 1.1.0
+ * @version 2.0.0
  */
 @EventListener
 public class SocialListener implements Listener {
