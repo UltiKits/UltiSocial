@@ -132,6 +132,8 @@ feature does not migrate or overwrite operator-written config.
 destinations for each arriving player. A suppressed event does not restart the timer; an arrival
 with no eligible recipients does not consume it. The cooldown resets on quit or module unload,
 and is not a server-wide budget across different players. Set it to 0 to disable throttling.
+A value outside 0–3600 (for example `7200`) makes the framework refuse to load the whole module,
+so correct it and restart the server.
 
 Blocks in either direction suppress the notice. A recipient who cannot see the arriving player
 also receives nothing. Explicitly deny `ultisocial.notify.world` to opt a player out of receiving

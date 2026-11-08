@@ -7,6 +7,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Opt-in friend world-arrival notices. With `notifications.friend_world_change.enabled: true` in
+  `config/social.yml` (default `false`), friends already in the destination world are told when a
+  player switches worlds. `notifications.friend_world_change.cooldown` (0–3600 seconds, default 30)
+  throttles the notices per arriving player. Blocks in either direction suppress the notice, and an
+  explicit deny of `ultisocial.notify.world` opts a player out of receiving and announcing
+  (UltiKits/UltiSocial#21).
+- 新增可选的好友进入世界通知。在 `config/social.yml` 中设置 `notifications.friend_world_change.enabled: true`
+  （默认 `false`）后，玩家切换世界时，已在目标世界的好友会收到通知。`notifications.friend_world_change.cooldown`
+  （0–3600 秒，默认 30）按到达玩家限流。任一方向的黑名单都会屏蔽通知；显式拒绝 `ultisocial.notify.world`
+  可让玩家既不接收也不公告（UltiKits/UltiSocial#21）。
+
 ### Fixed
 
 - Queued friend-list removals now read the current friendship by UUID and silently skip a pair
