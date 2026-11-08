@@ -288,6 +288,12 @@ public class FriendService {
     private void removeStoredFriend(Player player, FriendshipData friendship, String friendName) {
         UUID playerUuid = player.getUniqueId();
         dataOperator.delById(friendship.getId());
+        // Older data can hold duplicate forward rows for one pair (see deduplicateFriendPairs);
+        // delete every forward row of the pair, not only the one the list showed.
+        dataOperator.query()
+            .where("player_uuid").eq(playerUuid.toString())
+            .where("friend_uuid").eq(friendship.getFriendUuid())
+            .delete();
         dataOperator.query()
             .where("player_uuid").eq(friendship.getFriendUuid())
             .where("friend_uuid").eq(playerUuid.toString())
@@ -305,11 +311,13 @@ public class FriendService {
      * an action-time check, not an atomic cross-server revocation guarantee.
      *
      * @return true only while the stored friendship exists and neither direction is blocked;
-     *         otherwise sends the existing refusal and returns false without consuming cooldown
+     *         otherwise sends the existing refusal, drops both players' cached friend and block lists
+     *         so the next list shows the stored state, and returns false without consuming cooldown
      */
     public boolean validateTeleportFriendship(Player player, UUID friendUuid, String friendName) {
         UUID playerUuid = player.getUniqueId();
         if (isCurrentlyBlockedBy(playerUuid, friendUuid) || isCurrentlyBlockedBy(friendUuid, playerUuid)) {
+            evictPairCaches(playerUuid, friendUuid);
             player.sendMessage(config.getBlockedMessage().replace("{PLAYER}", friendName).replace("&", "§"));
             return false;
         }
@@ -317,10 +325,18 @@ public class FriendService {
                 .where("player_uuid").eq(playerUuid.toString())
                 .where("friend_uuid").eq(friendUuid.toString())
                 .exists()) {
+            evictPairCaches(playerUuid, friendUuid);
             player.sendMessage(plugin.i18n("not_friend").replace("{PLAYER}", friendName).replace("&", "§"));
             return false;
         }
         return true;
+    }
+
+    private void evictPairCaches(UUID playerUuid, UUID friendUuid) {
+        friendCache.remove(playerUuid);
+        friendCache.remove(friendUuid);
+        blacklistCache.remove(playerUuid);
+        blacklistCache.remove(friendUuid);
     }
 
     private boolean isCurrentlyBlockedBy(UUID blockerUuid, UUID blockedUuid) {
